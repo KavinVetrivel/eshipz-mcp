@@ -9,13 +9,15 @@ import os
 load_dotenv()
 
 # Initialize FastMCP server
-mcp = FastMCP("eshipz_tracking")
+mcp = FastMCP("eshipz-mcp")
 
 # Constants
 API_BASE_URL = os.getenv("API_BASE_URL", "https://app.eshipz.com")
 ESHIPZ_API_TRACKING_URL = f"{API_BASE_URL}/api/v2/trackings"
 ESHIPZ_TOKEN = os.getenv("ESHIPZ_TOKEN", "")
+ESHIPZ_CARRIER_PERFORMANCE_URL = "http://ds.eshipz.com/scoring/carrier-performance/v1/"
 
+# 
 async def make_nws_request(tracking_number: str) -> dict[str, Any] | None:
     headers = {
         "Content-Type": "application/json",
@@ -31,6 +33,31 @@ async def make_nws_request(tracking_number: str) -> dict[str, Any] | None:
             return response.json()
         except Exception:
             return None
+
+# the api call is made here after the carrier performance mcp tool invokes the make_carrier_performance_request function 
+async def make_carrier_performance_request(source_pin: str, destination_pin: str) -> dict[str, Any] | None:
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": ESHIPZ_TOKEN
+    }
+    payload = json.dumps({
+        "source_pin": source_pin,
+        "destination_pin": destination_pin
+    })
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                ESHIPZ_CARRIER_PERFORMANCE_URL,
+                headers=headers,
+                timeout=30.0,
+                data=payload
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception:
+            return None
+
+
 
 def _format_carrier(slug: str) -> str:
     """Format carrier name for display"""
@@ -102,10 +129,90 @@ def _create_summary(shipment: dict) -> str:
         return summary
 
 
+def _format_carrier_performance(data: dict) -> str:
+    """Format carrier performance data into human-readable summary"""
+    
+    source_pin = data.get("source_pin", "Unknown")
+    dest_pin = data.get("destination_pin", "Unknown")
+    carriers = data.get("carriers", [])
+    
+    if not carriers:
+        return f"No carrier performance data available for route {source_pin} to {dest_pin}"
+    
+    # Build summary header
+    summary = f"CARRIER PERFORMANCE ANALYSIS\n"
+    summary += f"Route: {source_pin} to {dest_pin}\n"
+    summary += f"Carriers analyzed: {len(carriers)}\n"
+    summary += f"{'-' * 60}\n\n"
+    
+    # Sort carriers by score (if available) or alphabetically
+    sorted_carriers = sorted(
+        carriers,
+        key=lambda x: x.get("score", 0),
+        reverse=True
+    )
+    
+    for idx, carrier in enumerate(sorted_carriers, 1):
+        carrier_name = _format_carrier(carrier.get("slug", carrier.get("name", "Unknown")))
+        score = carrier.get("score")
+        
+        summary += f"{idx}. {carrier_name}"
+        
+        if score is not None:
+            # Add rating classification based on score
+            if score >= 90:
+                rating = "Excellent"
+            elif score >= 75:
+                rating = "Good"
+            elif score >= 60:
+                rating = "Fair"
+            else:
+                rating = "Below Average"
+            summary += f"\n   Performance Score: {score}/100 ({rating})"
+        
+        # Add additional metrics if available
+        metrics = []
+        if carrier.get("delivery_rate"):
+            metrics.append(f"Delivery Rate: {carrier['delivery_rate']}%")
+        if carrier.get("on_time_rate"):
+            metrics.append(f"On-Time Rate: {carrier['on_time_rate']}%")
+        if carrier.get("avg_delivery_days"):
+            metrics.append(f"Avg. Delivery Days: {carrier['avg_delivery_days']}")
+        if carrier.get("transit_time"):
+            metrics.append(f"Transit Time: {carrier['transit_time']} days")
+        
+        if metrics:
+            for metric in metrics:
+                summary += f"\n   {metric}"
+        
+        summary += "\n\n"
+    
+    # Add recommendation if top carrier is clear winner
+    if len(sorted_carriers) > 1 and sorted_carriers[0].get("score"):
+        top_carrier = _format_carrier(sorted_carriers[0].get("slug", sorted_carriers[0].get("name")))
+        top_score = sorted_carriers[0].get("score", 0)
+        second_score = sorted_carriers[1].get("score", 0)
+        
+        if top_score - second_score >= 10:
+            summary += f"{'-' * 60}\n"
+            summary += f"RECOMMENDATION: {top_carrier}\n"
+            summary += f"Reason: Highest performance score on this route"
+    
+    return summary
+
+
 @mcp.tool()
 async def get_tracking(tracking_number: str) -> str:
-    """Get tracking information for a shipment"""
-    data = await make_nws_request(tracking_number)
+    """Get tracking information for a shipment
+    
+    Args:
+        tracking_number: The tracking number of the shipment (e.g., "ES123456789")
+    
+    Returns:
+        Formatted tracking summary including status, location, and timestamps.
+    """
+    
+    data = await make_nws_request(tracking_number) #invoking the function to perform the api call
     
     if not data:
         return " Tracking information could not be retrieved. Please verify the tracking number."
@@ -135,6 +242,37 @@ async def get_tracking(tracking_number: str) -> str:
 
     except Exception as e:
         return f"Error processing tracking data: {str(e)}"
+    
+    
+@mcp.tool()
+async def get_carrier_performance(source_pin: str, destination_pin: str) -> str:
+    """Get carrier performance analysis for a specific route
+    
+    Analyzes and compares carrier performance between two locations based on
+    historical delivery data, on-time rates, and transit times.
+    
+    Args:
+        source_pin: Source PIN/postal code (e.g., "421302")
+        destination_pin: Destination PIN/postal code (e.g., "560102")
+        
+    Returns:
+        Formatted carrier performance comparison with scores and recommendations
+        
+    Example:
+        get_carrier_performance("421302", "560102")
+    """
+    data = await make_carrier_performance_request(source_pin, destination_pin) # invoking the function to perform the api call
+    
+    if not data:
+        return f" Carrier performance data could not be retrieved for route {source_pin} → {destination_pin}.\n   Please verify the PIN codes and try again."
+    
+    try:
+        summary = _format_carrier_performance(data)
+        return summary
+    
+    except Exception as e:
+        return f" Error processing carrier performance data: {str(e)}"
+
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')
