@@ -15,7 +15,7 @@ mcp = FastMCP("eshipz-mcp")
 API_BASE_URL = os.getenv("API_BASE_URL", "https://app.eshipz.com")
 ESHIPZ_API_TRACKING_URL = f"{API_BASE_URL}/api/v2/trackings"
 ESHIPZ_TOKEN = os.getenv("ESHIPZ_TOKEN", "")
-ESHIPZ_CARRIER_PERFORMANCE_URL = "http://ds.eshipz.com/scoring/carrier-performance/v1/"
+ESHIPZ_CARRIER_PERFORMANCE_URL = "https://ds.eshipz.com/performance_score/cps_scores/v2/"
 
 # 
 async def make_nws_request(tracking_number: str) -> dict[str, Any] | None:
@@ -41,8 +41,8 @@ async def make_carrier_performance_request(source_pin: str, destination_pin: str
         "X-API-TOKEN": ESHIPZ_TOKEN
     }
     payload = json.dumps({
-        "source_pin": source_pin,
-        "destination_pin": destination_pin
+        "sender_postal_code": int(source_pin),
+        "tracking_postal_code": int(destination_pin)
     })
     async with httpx.AsyncClient() as client:
         try:
@@ -54,7 +54,8 @@ async def make_carrier_performance_request(source_pin: str, destination_pin: str
             )
             response.raise_for_status()
             return response.json()
-        except Exception:
+        except Exception as e:
+            print(f"Error in carrier performance request: {str(e)}")
             return None
 
 
@@ -132,54 +133,81 @@ def _create_summary(shipment: dict) -> str:
 def _format_carrier_performance(data: dict) -> str:
     """Format carrier performance data into human-readable summary"""
     
-    source_pin = data.get("source_pin", "Unknown")
-    dest_pin = data.get("destination_pin", "Unknown")
-    carriers = data.get("carriers", [])
+    # Extract data from API response structure
+    detail = data.get("detail", {})
+    status = detail.get("status", "")
     
-    if not carriers:
-        return f"No carrier performance data available for route {source_pin} to {dest_pin}"
+    if status != "SUCCESS":
+        return f"API returned non-success status: {status}"
+    
+    route_data_list = detail.get("data", [])
+    
+    if not route_data_list:
+        return "No carrier performance data available"
+    
+    # Get first route data (typically there's only one)
+    route_data = route_data_list[0]
+    
+    source_pin = int(route_data.get("sourcepin", 0))
+    dest_pin = int(route_data.get("trackingpin", 0))
+    
+    carrier_slugs = route_data.get("slug_cps_ordered", [])
+    delivery_scores = route_data.get("delivery_scores", [])
+    pickup_scores = route_data.get("pickup_scores", [])
+    rto_scores = route_data.get("rto_scores", [])
+    overall_scores = route_data.get("overall_scores", [])
+    
+    if not carrier_slugs:
+        return f"No carriers found for route {source_pin} to {dest_pin}"
     
     # Build summary header
     summary = f"CARRIER PERFORMANCE ANALYSIS\n"
     summary += f"Route: {source_pin} to {dest_pin}\n"
-    summary += f"Carriers analyzed: {len(carriers)}\n"
+    summary += f"Carriers analyzed: {len(carrier_slugs)}\n"
     summary += f"{'-' * 60}\n\n"
     
-    # Sort carriers by score (if available) or alphabetically
-    sorted_carriers = sorted(
-        carriers,
-        key=lambda x: x.get("score", 0),
-        reverse=True
-    )
+    # Create carrier data with scores
+    carriers_with_scores = []
+    for i, slug in enumerate(carrier_slugs):
+        carrier_data = {
+            "slug": slug,
+            "overall_score": overall_scores[i] if i < len(overall_scores) else None,
+            "delivery_score": delivery_scores[i] if i < len(delivery_scores) else None,
+            "pickup_score": pickup_scores[i] if i < len(pickup_scores) else None,
+            "rto_score": rto_scores[i] if i < len(rto_scores) else None
+        }
+        carriers_with_scores.append(carrier_data)
     
-    for idx, carrier in enumerate(sorted_carriers, 1):
-        carrier_name = _format_carrier(carrier.get("slug", carrier.get("name", "Unknown")))
-        score = carrier.get("score")
+    # Sort by overall score (descending)
+    carriers_with_scores.sort(key=lambda x: x.get("overall_score", 0), reverse=True)
+    
+    for idx, carrier in enumerate(carriers_with_scores, 1):
+        carrier_name = _format_carrier(carrier["slug"])
+        overall = carrier.get("overall_score")
         
         summary += f"{idx}. {carrier_name}"
         
-        if score is not None:
-            # Add rating classification based on score
-            if score >= 90:
+        if overall is not None:
+            # Convert 0-5 scale to 0-100 for display
+            score_100 = overall * 20
+            if score_100 >= 80:
                 rating = "Excellent"
-            elif score >= 75:
+            elif score_100 >= 60:
                 rating = "Good"
-            elif score >= 60:
+            elif score_100 >= 40:
                 rating = "Fair"
             else:
                 rating = "Below Average"
-            summary += f"\n   Performance Score: {score}/100 ({rating})"
+            summary += f"\n   Overall Score: {overall:.1f}/5.0 ({score_100:.0f}/100 - {rating})"
         
-        # Add additional metrics if available
+        # Add detailed scores
         metrics = []
-        if carrier.get("delivery_rate"):
-            metrics.append(f"Delivery Rate: {carrier['delivery_rate']}%")
-        if carrier.get("on_time_rate"):
-            metrics.append(f"On-Time Rate: {carrier['on_time_rate']}%")
-        if carrier.get("avg_delivery_days"):
-            metrics.append(f"Avg. Delivery Days: {carrier['avg_delivery_days']}")
-        if carrier.get("transit_time"):
-            metrics.append(f"Transit Time: {carrier['transit_time']} days")
+        if carrier.get("delivery_score") is not None:
+            metrics.append(f"Delivery Score: {carrier['delivery_score']:.1f}/5.0")
+        if carrier.get("pickup_score") is not None:
+            metrics.append(f"Pickup Score: {carrier['pickup_score']:.1f}/5.0")
+        if carrier.get("rto_score") is not None:
+            metrics.append(f"RTO Score: {carrier['rto_score']:.1f}/5.0")
         
         if metrics:
             for metric in metrics:
@@ -188,15 +216,17 @@ def _format_carrier_performance(data: dict) -> str:
         summary += "\n\n"
     
     # Add recommendation if top carrier is clear winner
-    if len(sorted_carriers) > 1 and sorted_carriers[0].get("score"):
-        top_carrier = _format_carrier(sorted_carriers[0].get("slug", sorted_carriers[0].get("name")))
-        top_score = sorted_carriers[0].get("score", 0)
-        second_score = sorted_carriers[1].get("score", 0)
+    if len(carriers_with_scores) > 1:
+        top_carrier = carriers_with_scores[0]
+        second_carrier = carriers_with_scores[1]
         
-        if top_score - second_score >= 10:
+        top_score = top_carrier.get("overall_score", 0)
+        second_score = second_carrier.get("overall_score", 0)
+        
+        if top_score and second_score and (top_score - second_score) >= 0.5:
             summary += f"{'-' * 60}\n"
-            summary += f"RECOMMENDATION: {top_carrier}\n"
-            summary += f"Reason: Highest performance score on this route"
+            summary += f"RECOMMENDATION: {_format_carrier(top_carrier['slug'])}\n"
+            summary += f"Reason: Highest overall performance score on this route"
     
     return summary
 
