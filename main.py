@@ -701,6 +701,10 @@ if __name__ == "__main__":
     import uvicorn
 
     if "--sse" in sys.argv or os.getenv("USE_SSE", "false").lower() == "true":
+        # FastMCP reads HOST and PORT from environment
+        os.environ.setdefault("HOST", "0.0.0.0")
+        if not os.getenv("PORT"):
+            os.environ["PORT"] = "10000"
         mcp.run(transport="sse")
     else:
         mcp.run(transport="stdio")
