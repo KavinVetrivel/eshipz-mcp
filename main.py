@@ -701,13 +701,6 @@ if __name__ == "__main__":
     import uvicorn
 
     if "--sse" in sys.argv or os.getenv("USE_SSE", "false").lower() == "true":
-        # Remote server mode (Render, Railway, etc.)
-        port = int(os.getenv("PORT", 10000))
-        
-        # Get the SSE app from FastMCP
-        app = mcp.get_app()
-        
-        uvicorn.run(app, host="0.0.0.0", port=port)
+        mcp.run(transport="sse")
     else:
-        # Local stdio mode (Claude Desktop)
         mcp.run(transport="stdio")
