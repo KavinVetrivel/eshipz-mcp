@@ -699,22 +699,15 @@ async def create_shipment(
 if __name__ == "__main__":
     import sys
     import uvicorn
-    
-    # Check if running with SSE transport (for remote server)
+
     if "--sse" in sys.argv or os.getenv("USE_SSE", "false").lower() == "true":
-        # Get port from environment (Render sets this)
+        # Remote server mode (Render, Railway, etc.)
         port = int(os.getenv("PORT", 10000))
         
-        # Run with uvicorn directly for better control
-        config = uvicorn.Config(
-            mcp.get_asgi_app(),
-            host="0.0.0.0",
-            port=port,
-            log_level="info"
-        )
-        server = uvicorn.Server(config)
-        import asyncio
-        asyncio.run(server.serve())
+        # Get the SSE app from FastMCP
+        app = mcp.get_app()
+        
+        uvicorn.run(app, host="0.0.0.0", port=port)
     else:
-        # Default to stdio for local use
-        mcp.run(transport='stdio')
+        # Local stdio mode (Claude Desktop)
+        mcp.run(transport="stdio")
