@@ -637,13 +637,7 @@ async def create_shipment(
                         {
                             "description": item_description,
                             "origin_country": "IN",
-                            "sku": item_sku,
-                            "hs_code": item_hsn_code,
                             "quantity": item_quantity,
-                            "price": {
-                                "amount": item_price,
-                                "currency": "INR"
-                            },
                             "weight": {
                                 "value": parcel_weight_kg,
                                 "unit": "kg"
