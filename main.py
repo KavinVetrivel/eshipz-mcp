@@ -19,6 +19,36 @@ ESHIPZ_CARRIER_PERFORMANCE_URL = "https://ds.eshipz.com/performance_score/cps_sc
 ESHIPZ_API_CREATE_SHIPMENT_URL = f"{API_BASE_URL}/api/v1/create-shipments"
 ESHIPZ_API_DOCKET_ALLOCATION_URL = f"{API_BASE_URL}/api/v1/docket-allocation"
 
+# Map common natural language descriptions to exact eShipz API slugs
+CARRIER_SLUG_MAP = {
+    "bluedart": "bluedart",
+    "blue dart": "bluedart",
+    "delhivery": "delhivery",
+    "delhivery surface": "delhivery-surface",
+    "dtdc": "dtdc",
+    "ekart": "ekart",
+    "xpressbees": "xpressbees",
+    "amazon": "amazon-shipping"
+}
+
+def _get_slug_from_description(description: str) -> str:
+    """Extracts the exact API slug from a natural language carrier description."""
+    if not description:
+        return "auto"  # Fallback to rule-based routing if no description is provided
+
+    desc_lower = description.lower().strip()
+
+    # Direct lookup
+    if desc_lower in CARRIER_SLUG_MAP:
+        return CARRIER_SLUG_MAP[desc_lower]
+
+    # Partial match (e.g., if user says "ship via BlueDart express")
+    for key, slug in CARRIER_SLUG_MAP.items():
+        if key in desc_lower:
+            return slug
+
+    return "auto"  # Fallback if no match is found
+
 async def get_tracking_details(tracking_number: str) -> dict[str, Any] | None:
     headers = {
         "Content-Type": "application/json",
@@ -510,36 +540,36 @@ async def allocate_docket(
 
 @mcp.tool()
 async def create_shipment(
-    carrier_slug: str,
-    service_type: str,
-    customer_reference: str,
+    carrier_description: str = "",            # LLM-provided natural language carrier description
+    service_type: str = "",                  # kept as required input for service selection
+    customer_reference: str = "",
     # Shipper details
-    ship_from_name: str,
-    ship_from_company: str,
-    ship_from_street1: str,
-    ship_from_city: str,
-    ship_from_state: str,
-    ship_from_pincode: str,
-    ship_from_phone: str,
-    ship_from_email: str,
+    ship_from_name: str = "",
+    ship_from_company: str = "",
+    ship_from_street1: str = "",
+    ship_from_city: str = "",
+    ship_from_state: str = "",
+    ship_from_pincode: str = "",
+    ship_from_phone: str = "",
+    ship_from_email: str = "",
     # Consignee details
-    ship_to_name: str,
-    ship_to_company: str,
-    ship_to_street1: str,
-    ship_to_city: str,
-    ship_to_state: str,
-    ship_to_pincode: str,
-    ship_to_phone: str,
+    ship_to_name: str = "",
+    ship_to_company: str = "",
+    ship_to_street1: str = "",
+    ship_to_city: str = "",
+    ship_to_state: str = "",
+    ship_to_pincode: str = "",
+    ship_to_phone: str = "",
     # Parcel details
-    parcel_description: str,
-    parcel_weight_kg: float,
-    parcel_length_cm: float,
-    parcel_width_cm: float,
-    parcel_height_cm: float,
+    parcel_description: str = "",
+    parcel_weight_kg: float = 0.0,
+    parcel_length_cm: float = 0.0,
+    parcel_width_cm: float = 0.0,
+    parcel_height_cm: float = 0.0,
     # Item details
-    item_description: str,
-    item_quantity: int,
-    item_price: float,
+    item_description: str = "",
+    item_quantity: int = 1,
+    item_price: float = 0.0,
     # Optional fields
     ship_from_street2: str = "",
     ship_to_street2: str = "",
@@ -555,13 +585,16 @@ async def create_shipment(
     item_sku: str = ""
 ) -> str:
     
+    # Determine actual slug from natural language description
+    actual_carrier_slug = _get_slug_from_description(carrier_description)
+
     # Build shipment data structure
     shipment_data = {
         "billing": {
             "paid_by": "shipper"
         },
-        "slug": None,
-        "service_type": None,
+        "slug": actual_carrier_slug,
+        "service_type": service_type or None,
         "customer_reference": customer_reference,
         "purpose": "commercial",
         "order_source": "mcp_api",
