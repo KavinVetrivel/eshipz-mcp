@@ -19,6 +19,128 @@ ESHIPZ_CARRIER_PERFORMANCE_URL = "https://ds.eshipz.com/performance_score/cps_sc
 ESHIPZ_API_CREATE_SHIPMENT_URL = f"{API_BASE_URL}/api/v1/create-shipments"
 ESHIPZ_API_DOCKET_ALLOCATION_URL = f"{API_BASE_URL}/api/v1/docket-allocation"
 
+
+CITY_STATE_MAP = {
+    # Metro cities
+    "chennai": "tamil nadu", "mumbai": "maharashtra", "bengaluru": "karnataka",
+    "bangalore": "karnataka", "delhi": "delhi", "new delhi": "delhi",
+    "kolkata": "west bengal", "hyderabad": "telangana", "pune": "maharashtra",
+    "ahmedabad": "gujarat", "surat": "gujarat", "jaipur": "rajasthan",
+    "lucknow": "uttar pradesh", "kanpur": "uttar pradesh", "nagpur": "maharashtra",
+    "indore": "madhya pradesh", "thane": "maharashra", "bhopal": "madhya pradesh",
+    "visakhapatnam": "andhra pradesh", "pimpri-chinchwad": "maharashtra",
+    "patna": "bihar", "vadodara": "gujarat", "ghaziabad": "uttar pradesh",
+    "ludhiana": "punjab", "agra": "uttar pradesh", "nashik": "maharashtra",
+    "faridabad": "haryana", "meerut": "uttar pradesh", "rajkot": "gujarat",
+    "kalyan-dombivali": "maharashtra", "vasai-virar": "maharashtra",
+    "varanasi": "uttar pradesh", "srinagar": "jammu and kashmir",
+    "aurangabad": "maharashtra", "dhanbad": "jharkhand", "amritsar": "punjab",
+    "navi mumbai": "maharashtra", "allahabad": "uttar pradesh",
+    "prayagraj": "uttar pradesh", "howrah": "west bengal", "ranchi": "jharkhand",
+    "gwalior": "madhya pradesh", "jabalpur": "madhya pradesh",
+    "coimbatore": "tamil nadu", "vijayawada": "andhra pradesh", "jodhpur": "rajasthan",
+    "madurai": "tamil nadu", "raipur": "chhattisgarh", "kota": "rajasthan",
+    "chandigarh": "chandigarh", "guwahati": "assam", "solapur": "maharashtra",
+    "hubballi-dharwad": "karnataka", "bareilly": "uttar pradesh", "moradabad": "uttar pradesh",
+    "mysore": "karnataka", "mysuru": "karnataka", "gurgaon": "haryana",
+    "gurugram": "haryana", "aligarh": "uttar pradesh", "jalandhar": "punjab",
+    "tiruchirappalli": "tamil nadu", "bhubaneswar": "odisha", "salem": "tamil nadu",
+    "warangal": "telangana", "guntur": "andhra pradesh", "bhiwandi": "maharashtra",
+    "saharanpur": "uttar pradesh", "gorakhpur": "uttar pradesh", "bikaner": "rajasthan",
+    "amravati": "maharashtra", "noida": "uttar pradesh", "jamshedpur": "jharkhand",
+    "bhilai": "chhattisgarh", "cuttack": "odisha", "firozabad": "uttar pradesh",
+    "kochi": "kerala", "cochin": "kerala", "nellore": "andhra pradesh",
+    "bhavnagar": "gujarat", "dehradun": "uttarakhand", "durgapur": "west bengal",
+    "asansol": "west bengal", "rourkela": "odisha", "nanded": "maharashtra",
+    "kolhapur": "maharashtra", "ajmer": "rajasthan", "akola": "maharashtra",
+    "gulbarga": "karnataka", "jamnagar": "gujarat", "ujjain": "madhya pradesh",
+    "loni": "uttar pradesh", "siliguri": "west bengal", "jhansi": "uttar pradesh",
+    "ulhasnagar": "maharashtra", "jammu": "jammu and kashmir", "sangli-miraj": "maharashtra",
+    "mangalore": "karnataka", "erode": "tamil nadu", "belgaum": "karnataka",
+    "belagavi": "karnataka", "ambattur": "tamil nadu", "tirunelveli": "tamil nadu",
+    "malegaon": "maharashtra", "gaya": "bihar", "jalgaon": "maharashtra",
+    "udaipur": "rajasthan", "maheshtala": "west bengal", "tiruppur": "tamil nadu",
+    "davanagere": "karnataka", "kozhikode": "kerala", "calicut": "kerala",
+    "akola": "maharashtra", "kurnool": "andhra pradesh", "rajpur sonarpur": "west bengal",
+    "rajahmundry": "andhra pradesh", "bokaro": "jharkhand", "south dumdum": "west bengal",
+    "bellary": "karnataka", "patiala": "punjab", "gopalpur": "west bengal",
+    "agartala": "tripura", "bhagalpur": "bihar", "muzaffarnagar": "uttar pradesh",
+    "bhatpara": "west bengal", "panihati": "west bengal", "latur": "maharashtra",
+    "dhule": "maharashtra", "rohtak": "haryana", "korba": "chhattisgarh",
+    "bhilwara": "rajasthan", "brahmapur": "odisha", "berhampur": "odisha",
+    "muzaffarpur": "bihar", "ahmednagar": "maharashtra", "mathura": "uttar pradesh",
+    "kollam": "kerala", "avadi": "tamil nadu", "kadapa": "andhra pradesh",
+    "kamarhati": "west bengal", "sambalpur": "odisha", "bilaspur": "chhattisgarh",
+    "shahjahanpur": "uttar pradesh", "satara": "maharashtra", "bijapur": "karnataka",
+    "rampur": "uttar pradesh", "shivamogga": "karnataka", "shimoga": "karnataka",
+    "chandrapur": "maharashtra", "junagadh": "gujarat", "thrissur": "kerala",
+    "alwar": "rajasthan", "bardhaman": "west bengal", "kulti": "west bengal",
+    "kakinada": "andhra pradesh", "nizamabad": "telangana", "parbhani": "maharashtra",
+    "tumkur": "karnataka", "khammam": "telangana", "ozhukarai": "puducherry",
+    "bihar sharif": "bihar", "panipat": "haryana", "darbhanga": "bihar",
+    "bally": "west bengal", "aizawl": "mizoram", "dewas": "madhya pradesh",
+    "ichalkaranji": "maharashtra", "karnal": "haryana", "bathinda": "punjab",
+    "jalna": "maharashtra", "eluru": "andhra pradesh", "kirari suleman nagar": "delhi",
+    "barasat": "west bengal", "purnia": "bihar", "satna": "madhya pradesh",
+    "mira-bhayandar": "maharashtra", "karimnagar": "telangana", "etawah": "uttar pradesh",
+    "bharatpur": "rajasthan", "begusarai": "bihar", "new delhi": "delhi",
+    "chhapra": "bihar", "kadapa": "andhra pradesh", "ramagundam": "telangana",
+    "pali": "rajasthan", "satna": "madhya pradesh", "vizianagaram": "andhra pradesh",
+    "katihar": "bihar", "hardwar": "uttarakhand", "haridwar": "uttarakhand",
+    "sonipat": "haryana", "nagercoil": "tamil nadu", "thanjavur": "tamil nadu",
+    "murwara": "madhya pradesh", "naihati": "west bengal", "sambhal": "uttar pradesh",
+    "nadiad": "gujarat", "yamunanagar": "haryana", "english bazar": "west bengal",
+    "unnao": "uttar pradesh", "secunderabad": "telangana", "margao": "goa",
+    "vasco da gama": "goa", "porbandar": "gujarat", "anand": "gujarat",
+    "ratlam": "madhya pradesh", "morbi": "gujarat", "pondicherry": "puducherry",
+    "puducherry": "puducherry", "gandhidham": "gujarat", "veraval": "gujarat",
+    "madras": "tamil nadu", "bombay": "maharashtra", "calcutta": "west bengal",
+}
+
+# City aliases for normalization
+CITY_ALIASES = {
+    "bangalore": "bengaluru", "bombay": "mumbai", "calcutta": "kolkata",
+    "madras": "chennai", "mysore": "mysuru", "cochin": "kochi",
+    "calicut": "kozhikode", "trivandrum": "thiruvananthapuram",
+    "poona": "pune", "baroda": "vadodara", "allahabad": "prayagraj",
+}
+def infer_state_from_city(city: str) -> str | None:
+    """Try to infer state name from a given city using aliases and CITY_STATE_MAP.
+
+    Returns normalized state string (as in CITY_STATE_MAP values) or None when
+    inference is not possible.
+    """
+    if not city:
+        return None
+
+    # Normalize city name
+    norm = city.strip().lower()
+    # remove common punctuation
+    for ch in [",", "."]:
+        norm = norm.replace(ch, "")
+    norm = " ".join(norm.split())
+
+    # map aliases
+    if norm in CITY_ALIASES:
+        norm = CITY_ALIASES[norm]
+
+    # direct lookup
+    state = CITY_STATE_MAP.get(norm)
+    if state:
+        return state
+
+    # try simple heuristics: remove spaces/dashes
+    alt = norm.replace(" ", "-")
+    state = CITY_STATE_MAP.get(alt)
+    if state:
+        return state
+
+    alt2 = norm.replace("-", " ")
+    state = CITY_STATE_MAP.get(alt2)
+    if state:
+        return state
+
+    return None
 async def get_tracking_details(tracking_number: str) -> dict[str, Any] | None:
     headers = {
         "Content-Type": "application/json",
@@ -414,7 +536,45 @@ def _format_docket_allocation_response(data: dict) -> str:
     
     return str(data)
 
-
+async def lookup_pincode(pincode: str) -> dict[str, Any] | None:
+    """
+    Look up city, state, district from a 6-digit Indian pincode using India Post API.
+    
+    Returns:
+        {
+            "pincode": "600001",
+            "city": "Chennai",
+            "state": "Tamil Nadu",
+            "district": "Chennai",
+            "country": "IN"
+        }
+        or None if invalid/not found
+    """
+    if not pincode or len(pincode) != 6 or not pincode.isdigit():
+        return None
+    
+    url = f"https://api.postalpincode.in/pincode/{pincode}"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, timeout=5.0)
+            data = response.json()
+            
+            if data and len(data) > 0 and data[0].get("Status") == "Success":
+                post_offices = data[0].get("PostOffice", [])
+                if post_offices and len(post_offices) > 0:
+                    office = post_offices[0]
+                    return {
+                        "pincode": pincode,
+                        "city": office.get("District", "").strip(),
+                        "state": office.get("State", "").strip(),
+                        "district": office.get("District", "").strip(),
+                        "country": "IN"
+                    }
+        except Exception as e:
+            print(f"Pincode lookup failed for {pincode}: {str(e)}")
+    
+    return None
 
 @mcp.tool()
 async def get_tracking(tracking_number: str) -> str:
@@ -555,6 +715,49 @@ async def create_shipment(
     item_sku: str = ""
 ) -> str:
     
+    # If pincode provided but city/state missing, try pincode lookup
+    if ship_from_pincode and (not ship_from_city or not ship_from_state):
+        try:
+            info = await lookup_pincode(ship_from_pincode)
+            if info:
+                ship_from_city = ship_from_city or info.get("city", ship_from_city)
+                ship_from_state = ship_from_state or info.get("state", ship_from_state)
+        except Exception:
+            pass
+
+    if ship_to_pincode and (not ship_to_city or not ship_to_state):
+        try:
+            info = await lookup_pincode(ship_to_pincode)
+            if info:
+                ship_to_city = ship_to_city or info.get("city", ship_to_city)
+                ship_to_state = ship_to_state or info.get("state", ship_to_state)
+        except Exception:
+            pass
+
+    # If city provided but state missing, try to infer using local mapping
+    missing_states = []
+
+    if ship_from_city and not ship_from_state:
+        inferred = infer_state_from_city(ship_from_city)
+        if inferred:
+            ship_from_state = inferred
+        else:
+            missing_states.append(f"sender (city: {ship_from_city})")
+
+    if ship_to_city and not ship_to_state:
+        inferred = infer_state_from_city(ship_to_city)
+        if inferred:
+            ship_to_state = inferred
+        else:
+            missing_states.append(f"consignee (city: {ship_to_city})")
+
+    # If any states are missing and couldn't be inferred, ask the user
+    if missing_states:
+        if len(missing_states) == 1:
+            return f"Please provide the state for the {missing_states[0]}."
+        else:
+            return f"Please provide the states for: {', '.join(missing_states)}."
+
     # Build shipment data structure
     shipment_data = {
         "billing": {
@@ -563,7 +766,7 @@ async def create_shipment(
         "slug": None,
         "service_type": None,
         "customer_reference": customer_reference,
-        "purpose": "commercial",
+        "purpose": "commercial",  #standard value-commercial
         "order_source": "mcp_api",
         "parcel_contents": parcel_description,
         "is_document": is_document,
