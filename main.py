@@ -3,7 +3,9 @@ from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
-import os 
+import os
+import re
+from datetime import datetime 
 
 # Load environment variables
 load_dotenv()
@@ -134,6 +136,16 @@ CITY_ALIASES = {
     "calicut": "kozhikode", "trivandrum": "thiruvananthapuram",
     "poona": "pune", "baroda": "vadodara", "allahabad": "prayagraj",
 }
+
+# Parcel validation constants
+MAX_WEIGHT_KG = 300
+MAX_DIM_CM = 300
+VOLUMETRIC_DIVISOR = 5000  # standard for most Indian carriers
+
+# Address type keywords
+RESIDENTIAL_KEYWORDS = {"home", "house", "flat", "apartment", "villa", "lane", "society"}
+BUSINESS_KEYWORDS = {"pvt", "ltd", "llp", "inc", "corp", "technologies", "enterprises"}
+
 def infer_state_from_city(city: str) -> str | None:
     """Try to infer state name from a given city using aliases and CITY_STATE_MAP.
 
@@ -171,6 +183,73 @@ def infer_state_from_city(city: str) -> str | None:
         return state
 
     return None
+
+def normalize_phone(phone: str) -> str | None:
+    """Normalize Indian phone numbers to 10 digits."""
+    if not phone:
+        return None
+    digits = re.sub(r"\D", "", phone)
+    if digits.startswith("91") and len(digits) == 12:
+        digits = digits[2:]
+    if len(digits) != 10 or not digits[0] in "6789":
+        return None  # Invalid Indian mobile number
+    return digits
+
+
+def validate_pincode(pincode: str) -> bool:
+    """Validate Indian 6-digit pincode."""
+    return bool(pincode and re.fullmatch(r"[1-9][0-9]{5}", pincode))
+
+
+def validate_parcel_dimensions(weight: float, length: float, width: float, height: float) -> str | None:
+    
+    if weight <= 0:
+        return "Parcel weight must be greater than 0."
+    if weight > MAX_WEIGHT_KG:
+        return f"Parcel weight {weight}kg exceeds max allowed ({MAX_WEIGHT_KG}kg)."
+    for name, val in [("length", length), ("width", width), ("height", height)]:
+        if val < 0:
+            return f"{name.capitalize()} cannot be negative."
+        if val > MAX_DIM_CM:
+            return f"{name.capitalize()} {val}cm exceeds max allowed ({MAX_DIM_CM}cm)."
+    return None
+
+
+def compute_chargeable_weight(actual_kg: float, l: float, w: float, h: float) -> float:
+    """Returns the higher of actual vs volumetric weight."""
+    volumetric_kg = (l * w * h) / VOLUMETRIC_DIVISOR
+    return round(max(actual_kg, volumetric_kg), 2)
+
+
+def infer_service_type(weight_kg: float, carrier_slug: str) -> str:
+    """Rule-based service type selection."""
+    """ this is experimental and should be verified for other carriers as well or removed"""
+    if carrier_slug == "delhivery":
+        return "delhivery-surface" if weight_kg > 10 else "delhivery"
+    if weight_kg > 30:
+        return "surface"
+    return "express"
+
+
+def infer_address_type(company: str, street: str) -> str:
+    """Infer address type from company and street info."""
+    text = (company + " " + street).lower()
+    if any(k in text for k in BUSINESS_KEYWORDS):
+        return "business"
+    if any(k in text for k in RESIDENTIAL_KEYWORDS):
+        return "residential"
+    return "business" if company else "residential"
+
+
+def normalize_date(date_str: str) -> str | None:
+    """Try to normalize date to YYYY-MM-DD."""
+    for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d %b %Y"):
+        try:
+            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return None
+
 async def get_tracking_details(tracking_number: str) -> dict[str, Any] | None:
     headers = {
         "Content-Type": "application/json",
@@ -748,7 +827,88 @@ async def create_shipment(
     # Determine actual slug from natural language description
     actual_carrier_slug = _get_slug_from_description(carrier_description)
 
+    # Validate required fields
+    REQUIRED_FIELDS = {
+        "ship_from_name": ship_from_name,
+        "ship_from_pincode": ship_from_pincode,
+        "ship_from_phone": ship_from_phone,
+        "ship_to_name": ship_to_name,
+        "ship_to_pincode": ship_to_pincode,
+        "ship_to_phone": ship_to_phone,
+        "parcel_weight_kg": parcel_weight_kg,
+    }
     
+    missing = [k for k, v in REQUIRED_FIELDS.items() if not v]
+    if missing:
+        return f"Missing required fields: {', '.join(missing)}"
+
+    # Validate phone numbers - use as-is if provided, only normalize if invalid
+    # Try to use phone as provided first
+    phone_digits_from = re.sub(r"\D", "", ship_from_phone)
+    if len(phone_digits_from) >= 10:
+        # User provided valid-looking phone, use it as-is
+        ship_from_phone = phone_digits_from[-10:]  # Take last 10 digits
+    else:
+        # Fallback: try normalize function
+        normalized = normalize_phone(ship_from_phone)
+        if not normalized:
+            return f"Invalid shipper phone number: {ship_from_phone}. Must be a valid Indian mobile number (10 digits)."
+        ship_from_phone = normalized
+
+    phone_digits_to = re.sub(r"\D", "", ship_to_phone)
+    if len(phone_digits_to) >= 10:
+        # User provided valid-looking phone, use it as-is
+        ship_to_phone = phone_digits_to[-10:]  # Take last 10 digits
+    else:
+        # Fallback: try normalize function
+        normalized = normalize_phone(ship_to_phone)
+        if not normalized:
+            return f"Invalid consignee phone number: {ship_to_phone}. Must be a valid Indian mobile number (10 digits)."
+        ship_to_phone = normalized
+
+    # Validate pincodes - accept if user provided valid 6-digit format
+    if not (ship_from_pincode and len(ship_from_pincode) == 6 and ship_from_pincode.isdigit()):
+        return f"Invalid shipper pincode: {ship_from_pincode}. Must be a valid 6-digit Indian pincode."
+    
+    if not (ship_to_pincode and len(ship_to_pincode) == 6 and ship_to_pincode.isdigit()):
+        return f"Invalid consignee pincode: {ship_to_pincode}. Must be a valid 6-digit Indian pincode."
+
+    # Validate parcel dimensions - only apply rules if user provided dimensions
+    if parcel_length_cm > 0 or parcel_width_cm > 0 or parcel_height_cm > 0:
+        # User provided dimensions, validate them
+        dimension_error = validate_parcel_dimensions(parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm)
+        if dimension_error:
+            return dimension_error
+    elif parcel_weight_kg > MAX_WEIGHT_KG:
+        # User didn't provide dimensions but weight is invalid
+        return f"Parcel weight {parcel_weight_kg}kg exceeds max allowed ({MAX_WEIGHT_KG}kg)."
+
+    # Validate COD settings
+    if is_cod and cod_amount <= 0:
+        return "COD amount must be greater than 0 when COD is enabled."
+
+    if not is_cod and cod_amount > 0:
+        cod_amount = 0.0  # silently fix inconsistency
+
+    # Compute chargeable weight - use actual weight if dimensions not provided
+    if parcel_length_cm > 0 and parcel_width_cm > 0 and parcel_height_cm > 0:
+        # User provided full dimensions, compute volumetric vs actual
+        chargeable_weight = compute_chargeable_weight(parcel_weight_kg, parcel_length_cm, parcel_width_cm, parcel_height_cm)
+    else:
+        # User didn't provide full dimensions, use actual weight
+        chargeable_weight = parcel_weight_kg
+
+    # Infer service type if not provided
+    if not service_type:
+        service_type = infer_service_type(parcel_weight_kg, actual_carrier_slug)
+
+    # Normalize invoice date if provided
+    if invoice_date:
+        normalized_date = normalize_date(invoice_date)
+        if not normalized_date:
+            return f"Invalid invoice date format: {invoice_date}. Accepted formats: DD-MM-YYYY, DD/MM/YYYY, YYYY/MM/DD, DD MMM YYYY"
+        invoice_date = normalized_date
+
     # If pincode provided but city/state missing, try pincode lookup
     if ship_from_pincode and (not ship_from_city or not ship_from_state):
         try:
@@ -792,6 +952,18 @@ async def create_shipment(
         else:
             return f"Please provide the states for: {', '.join(missing_states)}."
 
+    # Infer address types - use rules as backup if company/street are not clear
+    # But default to the basic logic if company name exists
+    if not ship_from_company and not ship_from_street1:
+        ship_from_type = "residential"  # No company info, default to residential
+    else:
+        ship_from_type = infer_address_type(ship_from_company, ship_from_street1)
+    
+    if not ship_to_company and not ship_to_street1:
+        ship_to_type = "residential"  # No company info, default to residential
+    else:
+        ship_to_type = infer_address_type(ship_to_company, ship_to_street1)
+
     # Build shipment data structure
     shipment_data = {
         "billing": {
@@ -811,7 +983,7 @@ async def create_shipment(
         },
         "charged_weight": {
             "unit": "kg",
-            "value": parcel_weight_kg
+            "value": chargeable_weight
         },
         "shipment": {
             "ship_from": {
@@ -825,7 +997,7 @@ async def create_shipment(
                 "phone": ship_from_phone,
                 "email": ship_from_email,
                 "country": "IN",
-                "type": "business" if ship_from_company else "residential"
+                "type": ship_from_type
             },
             "ship_to": {
                 "contact_name": ship_to_name,
@@ -838,7 +1010,7 @@ async def create_shipment(
                 "phone": ship_to_phone,
                 "email": ship_to_email if ship_to_email else ship_from_email,
                 "country": "IN",
-                "type": "business" if ship_to_company else "residential"
+                "type": ship_to_type
             },
             "return_to": {
                 "contact_name": ship_from_name,
@@ -851,7 +1023,7 @@ async def create_shipment(
                 "phone": ship_from_phone,
                 "email": ship_from_email,
                 "country": "IN",
-                "type": "business" if ship_from_company else "residential"
+                "type": ship_from_type
             },
             "is_reverse": False,
             "is_to_pay": False,
