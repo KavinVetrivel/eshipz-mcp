@@ -20,6 +20,7 @@ ESHIPZ_TOKEN = os.getenv("ESHIPZ_TOKEN", "")
 ESHIPZ_CARRIER_PERFORMANCE_URL = "https://ds.eshipz.com/performance_score/cps_scores/v2/"
 ESHIPZ_API_CREATE_SHIPMENT_URL = f"{API_BASE_URL}/api/v1/create-shipments"
 ESHIPZ_API_DOCKET_ALLOCATION_URL = f"{API_BASE_URL}/api/v1/docket-allocation"
+ESHIPZ_API_ORDERS_URL = "https://orders.eshipz.com/api/v1/orders"
 
 # Map common natural language descriptions to exact eShipz API slugs
 CARRIER_SLUG_MAP = {
@@ -327,6 +328,28 @@ async def make_docket_allocation_request(allocation_data: dict) -> dict[str, Any
             return response.json()
         except Exception as e:
             print(f"Error in docket allocation request: {str(e)}")
+            return None
+
+
+async def fetch_order_by_id(order_id: str) -> dict[str, Any] | None:
+    """Fetch a single order by order ID from the eShipz Orders API"""
+    headers = {
+        "Content-Type": "application/json",
+        "X-API-TOKEN": ESHIPZ_TOKEN
+    }
+    # URL format: https://orders.eshipz.com/api/v1/orders/{order_id}
+    url = f"{ESHIPZ_API_ORDERS_URL}/{order_id}"
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(
+                url,
+                headers=headers,
+                timeout=30.0
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Error fetching order {order_id}: {str(e)}")
             return None
 
 
@@ -1097,6 +1120,239 @@ async def create_shipment(
     
     except Exception as e: 
         return f"Error processing shipment creation: {str(e)}"
+
+
+@mcp.tool()
+async def fetch_and_create_shipment(
+    order_id: str,
+    # Optional carrier and service type
+    carrier_description: str = "",
+    service_type: str = "",
+    # Optional shipper details override (if shipper_address in order is empty/incomplete)
+    ship_from_name: str = "",
+    ship_from_company: str = "",
+    ship_from_street1: str = "",
+    ship_from_street2: str = "",
+    ship_from_city: str = "",
+    ship_from_state: str = "",
+    ship_from_pincode: str = "",
+    ship_from_phone: str = "",
+    ship_from_email: str = "",
+    ship_from_gstin: str = "",
+    # Optional fields
+    vendor_id: str = ""
+) -> str:
+    """
+    Fetch an order by order_id from eShipz Orders API and create a shipment using the order data.
+    
+    This tool:
+    1. Fetches the order details from the Orders API
+    2. Extracts receiver address, items, parcels, and invoice data from the order
+    3. Uses provided shipper details (or from order if available)
+    4. Creates a shipment by calling the create_shipment API
+    
+    Args:
+        order_id: The order ID to fetch (e.g., "INV/25-26/656776")
+        carrier_description: Natural language carrier description (e.g., "bluedart", "delhivery")
+        service_type: Service type for shipment
+        ship_from_*: Shipper details (required if shipper_address in order is empty)
+        vendor_id: Optional vendor ID
+    
+    Returns:
+        Success message with shipment details or error message
+    """
+    
+    # Step 1: Fetch order from Orders API
+    order_data = await fetch_order_by_id(order_id)
+    
+    if not order_data:
+        return f"Failed to fetch order {order_id}. Please verify the order ID and try again."
+    
+    # Check if the response is successful
+    if order_data.get("status") != 200:
+        remark = order_data.get("remark", "Unknown error")
+        return f"Failed to fetch order {order_id}: {remark}"
+    
+    # Extract order details
+    orders = order_data.get("orders", [])
+    if not orders or len(orders) == 0:
+        return f"No order found with ID {order_id}"
+    
+    order = orders[0]
+    
+    # Step 2: Extract data from order
+    receiver_address = order.get("receiver_address", {})
+    shipper_address = order.get("shipper_address", {})
+    items = order.get("items", [])
+    parcels = order.get("parcels", [])
+    gst_invoices = order.get("gst_invoices", [])
+    
+    # Determine COD
+    is_cod = order.get("is_cod", False)
+    cod_amount = float(order.get("cod_amount", 0))
+    
+    # Extract invoice details
+    invoice_number = order.get("invoice_number", "")
+    invoice_date = ""
+    invoice_value = 0.0
+    
+    if gst_invoices and len(gst_invoices) > 0:
+        gst_invoice = gst_invoices[0]
+        invoice_number = invoice_number or gst_invoice.get("invoice_number", "")
+        invoice_date = gst_invoice.get("invoice_date", "")
+        invoice_value = gst_invoice.get("invoice_value", 0.0)
+    
+    # Extract receiver (ship_to) details
+    ship_to_name = f"{receiver_address.get('first_name', '')} {receiver_address.get('last_name', '')}".strip()
+    ship_to_company = receiver_address.get("company_name", "")
+    ship_to_street1 = receiver_address.get("address", "")
+    ship_to_city = receiver_address.get("city", "")
+    ship_to_state = receiver_address.get("state", "")
+    ship_to_pincode = receiver_address.get("zipcode", "")
+    ship_to_phone = receiver_address.get("phone", "")
+    ship_to_email = receiver_address.get("email", "")
+    ship_to_gstin = receiver_address.get("gst_number", "")
+    
+    # Extract shipper (ship_from) details - use provided values or order values
+    if not ship_from_name and shipper_address.get("first_name"):
+        ship_from_name = f"{shipper_address.get('first_name', '')} {shipper_address.get('last_name', '')}".strip()
+    
+    if not ship_from_company and shipper_address.get("company_name"):
+        ship_from_company = shipper_address.get("company_name", "")
+    
+    if not ship_from_street1 and shipper_address.get("address"):
+        ship_from_street1 = shipper_address.get("address", "")
+    
+    if not ship_from_city and shipper_address.get("city"):
+        ship_from_city = shipper_address.get("city", "")
+    
+    if not ship_from_state and shipper_address.get("state"):
+        ship_from_state = shipper_address.get("state", "")
+    
+    if not ship_from_pincode and shipper_address.get("zipcode"):
+        ship_from_pincode = shipper_address.get("zipcode", "")
+    
+    if not ship_from_phone and shipper_address.get("phone"):
+        ship_from_phone = shipper_address.get("phone", "")
+    
+    if not ship_from_email and shipper_address.get("email"):
+        ship_from_email = shipper_address.get("email", "")
+    
+    if not ship_from_gstin and shipper_address.get("gst_number"):
+        ship_from_gstin = shipper_address.get("gst_number", "")
+    
+    # Extract item details (use first item if multiple)
+    item_description = ""
+    item_quantity = 1
+    item_price = 0.0
+    item_sku = ""
+    item_hsn_code = ""
+    
+    if items and len(items) > 0:
+        first_item = items[0]
+        item_description = first_item.get("description", "")
+        item_quantity = int(first_item.get("quantity", 1))
+        item_value = first_item.get("value", {})
+        item_price = float(item_value.get("amount", 0))
+        item_sku = first_item.get("sku", "")
+        item_hsn_code = first_item.get("hs_code", "")
+    
+    # Extract parcel details (use first parcel if multiple)
+    parcel_weight_kg = 0.0
+    parcel_length_cm = 0.0
+    parcel_width_cm = 0.0
+    parcel_height_cm = 0.0
+    parcel_description = item_description  # Use item description as parcel description
+    
+    if parcels and len(parcels) > 0:
+        first_parcel = parcels[0]
+        weight_data = first_parcel.get("weight", {})
+        parcel_weight_kg = float(weight_data.get("value", 0) or 0)
+        
+        # Convert weight to kg if needed
+        weight_unit = weight_data.get("unit_of_measurement", "KG").upper()
+        if weight_unit == "G" or weight_unit == "GRAM":
+            parcel_weight_kg = parcel_weight_kg / 1000
+        
+        dimensions = first_parcel.get("dimensions", {})
+        parcel_length_cm = float(dimensions.get("length", 0) or 0)
+        parcel_width_cm = float(dimensions.get("width", 0) or 0)
+        parcel_height_cm = float(dimensions.get("height", 0) or 0)
+        
+        # Convert dimensions to cm if needed
+        dim_unit = dimensions.get("unit_of_measurement", "CM").upper()
+        if dim_unit == "M" or dim_unit == "METER":
+            parcel_length_cm = parcel_length_cm * 100
+            parcel_width_cm = parcel_width_cm * 100
+            parcel_height_cm = parcel_height_cm * 100
+    
+    # Check if required fields are missing
+    missing_fields = []
+    
+    if not ship_to_name:
+        missing_fields.append("receiver name")
+    if not ship_to_pincode:
+        missing_fields.append("receiver pincode")
+    if not ship_to_phone:
+        missing_fields.append("receiver phone")
+    if not ship_from_name:
+        missing_fields.append("shipper name (ship_from_name parameter)")
+    if not ship_from_pincode:
+        missing_fields.append("shipper pincode (ship_from_pincode parameter)")
+    if not ship_from_phone:
+        missing_fields.append("shipper phone (ship_from_phone parameter)")
+    if parcel_weight_kg <= 0:
+        missing_fields.append("parcel weight")
+    
+    if missing_fields:
+        return f"Cannot create shipment. Missing required fields: {', '.join(missing_fields)}"
+    
+    # Step 3: Create shipment using the create_shipment tool
+    result = await create_shipment(
+        carrier_description=carrier_description,
+        service_type=service_type,
+        customer_reference=order_id,
+        # Shipper details
+        ship_from_name=ship_from_name,
+        ship_from_company=ship_from_company,
+        ship_from_street1=ship_from_street1,
+        ship_from_street2=ship_from_street2,
+        ship_from_city=ship_from_city,
+        ship_from_state=ship_from_state,
+        ship_from_pincode=ship_from_pincode,
+        ship_from_phone=ship_from_phone,
+        ship_from_email=ship_from_email,
+        ship_from_gstin=ship_from_gstin,
+        # Receiver details
+        ship_to_name=ship_to_name,
+        ship_to_company=ship_to_company,
+        ship_to_street1=ship_to_street1,
+        ship_to_city=ship_to_city,
+        ship_to_state=ship_to_state,
+        ship_to_pincode=ship_to_pincode,
+        ship_to_phone=ship_to_phone,
+        ship_to_email=ship_to_email,
+        # Parcel details
+        parcel_description=parcel_description,
+        parcel_weight_kg=parcel_weight_kg,
+        parcel_length_cm=parcel_length_cm,
+        parcel_width_cm=parcel_width_cm,
+        parcel_height_cm=parcel_height_cm,
+        # Item details
+        item_description=item_description,
+        item_quantity=item_quantity,
+        item_price=item_price,
+        item_sku=item_sku,
+        item_hsn_code=item_hsn_code,
+        # COD and invoice
+        is_cod=is_cod,
+        cod_amount=cod_amount,
+        invoice_number=invoice_number,
+        invoice_date=invoice_date,
+        vendor_id=vendor_id
+    )
+    
+    return result
 
 
 if __name__ == "__main__":
