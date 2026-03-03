@@ -23,7 +23,6 @@ ESHIPZ_API_DOCKET_ALLOCATION_URL = f"{API_BASE_URL}/api/v1/docket-allocation"
 ESHIPZ_API_ORDERS_URL = "https://orders.eshipz.com/api/v1/orders"
 
 # Map common natural language descriptions to exact eShipz API slugs
-'''
 CARRIER_SLUG_MAP = {
     "bluedart": "bluedart",
     "blue dart": "bluedart",
@@ -54,204 +53,204 @@ def _get_slug_from_description(description: str) -> str:
     return "auto"  # Fallback if no match is found
 
 
-CITY_STATE_MAP = {
-    # Metro cities
-    "chennai": "tamil nadu", "mumbai": "maharashtra", "bengaluru": "karnataka",
-    "bangalore": "karnataka", "delhi": "delhi", "new delhi": "delhi",
-    "kolkata": "west bengal", "hyderabad": "telangana", "pune": "maharashtra",
-    "ahmedabad": "gujarat", "surat": "gujarat", "jaipur": "rajasthan",
-    "lucknow": "uttar pradesh", "kanpur": "uttar pradesh", "nagpur": "maharashtra",
-    "indore": "madhya pradesh", "thane": "maharashra", "bhopal": "madhya pradesh",
-    "visakhapatnam": "andhra pradesh", "pimpri-chinchwad": "maharashtra",
-    "patna": "bihar", "vadodara": "gujarat", "ghaziabad": "uttar pradesh",
-    "ludhiana": "punjab", "agra": "uttar pradesh", "nashik": "maharashtra",
-    "faridabad": "haryana", "meerut": "uttar pradesh", "rajkot": "gujarat",
-    "kalyan-dombivali": "maharashtra", "vasai-virar": "maharashtra",
-    "varanasi": "uttar pradesh", "srinagar": "jammu and kashmir",
-    "aurangabad": "maharashtra", "dhanbad": "jharkhand", "amritsar": "punjab",
-    "navi mumbai": "maharashtra", "allahabad": "uttar pradesh",
-    "prayagraj": "uttar pradesh", "howrah": "west bengal", "ranchi": "jharkhand",
-    "gwalior": "madhya pradesh", "jabalpur": "madhya pradesh",
-    "coimbatore": "tamil nadu", "vijayawada": "andhra pradesh", "jodhpur": "rajasthan",
-    "madurai": "tamil nadu", "raipur": "chhattisgarh", "kota": "rajasthan",
-    "chandigarh": "chandigarh", "guwahati": "assam", "solapur": "maharashtra",
-    "hubballi-dharwad": "karnataka", "bareilly": "uttar pradesh", "moradabad": "uttar pradesh",
-    "mysore": "karnataka", "mysuru": "karnataka", "gurgaon": "haryana",
-    "gurugram": "haryana", "aligarh": "uttar pradesh", "jalandhar": "punjab",
-    "tiruchirappalli": "tamil nadu", "bhubaneswar": "odisha", "salem": "tamil nadu",
-    "warangal": "telangana", "guntur": "andhra pradesh", "bhiwandi": "maharashtra",
-    "saharanpur": "uttar pradesh", "gorakhpur": "uttar pradesh", "bikaner": "rajasthan",
-    "amravati": "maharashtra", "noida": "uttar pradesh", "jamshedpur": "jharkhand",
-    "bhilai": "chhattisgarh", "cuttack": "odisha", "firozabad": "uttar pradesh",
-    "kochi": "kerala", "cochin": "kerala", "nellore": "andhra pradesh",
-    "bhavnagar": "gujarat", "dehradun": "uttarakhand", "durgapur": "west bengal",
-    "asansol": "west bengal", "rourkela": "odisha", "nanded": "maharashtra",
-    "kolhapur": "maharashtra", "ajmer": "rajasthan", "akola": "maharashtra",
-    "gulbarga": "karnataka", "jamnagar": "gujarat", "ujjain": "madhya pradesh",
-    "loni": "uttar pradesh", "siliguri": "west bengal", "jhansi": "uttar pradesh",
-    "ulhasnagar": "maharashtra", "jammu": "jammu and kashmir", "sangli-miraj": "maharashtra",
-    "mangalore": "karnataka", "erode": "tamil nadu", "belgaum": "karnataka",
-    "belagavi": "karnataka", "ambattur": "tamil nadu", "tirunelveli": "tamil nadu",
-    "malegaon": "maharashtra", "gaya": "bihar", "jalgaon": "maharashtra",
-    "udaipur": "rajasthan", "maheshtala": "west bengal", "tiruppur": "tamil nadu",
-    "davanagere": "karnataka", "kozhikode": "kerala", "calicut": "kerala",
-    "akola": "maharashtra", "kurnool": "andhra pradesh", "rajpur sonarpur": "west bengal",
-    "rajahmundry": "andhra pradesh", "bokaro": "jharkhand", "south dumdum": "west bengal",
-    "bellary": "karnataka", "patiala": "punjab", "gopalpur": "west bengal",
-    "agartala": "tripura", "bhagalpur": "bihar", "muzaffarnagar": "uttar pradesh",
-    "bhatpara": "west bengal", "panihati": "west bengal", "latur": "maharashtra",
-    "dhule": "maharashtra", "rohtak": "haryana", "korba": "chhattisgarh",
-    "bhilwara": "rajasthan", "brahmapur": "odisha", "berhampur": "odisha",
-    "muzaffarpur": "bihar", "ahmednagar": "maharashtra", "mathura": "uttar pradesh",
-    "kollam": "kerala", "avadi": "tamil nadu", "kadapa": "andhra pradesh",
-    "kamarhati": "west bengal", "sambalpur": "odisha", "bilaspur": "chhattisgarh",
-    "shahjahanpur": "uttar pradesh", "satara": "maharashtra", "bijapur": "karnataka",
-    "rampur": "uttar pradesh", "shivamogga": "karnataka", "shimoga": "karnataka",
-    "chandrapur": "maharashtra", "junagadh": "gujarat", "thrissur": "kerala",
-    "alwar": "rajasthan", "bardhaman": "west bengal", "kulti": "west bengal",
-    "kakinada": "andhra pradesh", "nizamabad": "telangana", "parbhani": "maharashtra",
-    "tumkur": "karnataka", "khammam": "telangana", "ozhukarai": "puducherry",
-    "bihar sharif": "bihar", "panipat": "haryana", "darbhanga": "bihar",
-    "bally": "west bengal", "aizawl": "mizoram", "dewas": "madhya pradesh",
-    "ichalkaranji": "maharashtra", "karnal": "haryana", "bathinda": "punjab",
-    "jalna": "maharashtra", "eluru": "andhra pradesh", "kirari suleman nagar": "delhi",
-    "barasat": "west bengal", "purnia": "bihar", "satna": "madhya pradesh",
-    "mira-bhayandar": "maharashtra", "karimnagar": "telangana", "etawah": "uttar pradesh",
-    "bharatpur": "rajasthan", "begusarai": "bihar", "new delhi": "delhi",
-    "chhapra": "bihar", "kadapa": "andhra pradesh", "ramagundam": "telangana",
-    "pali": "rajasthan", "satna": "madhya pradesh", "vizianagaram": "andhra pradesh",
-    "katihar": "bihar", "hardwar": "uttarakhand", "haridwar": "uttarakhand",
-    "sonipat": "haryana", "nagercoil": "tamil nadu", "thanjavur": "tamil nadu",
-    "murwara": "madhya pradesh", "naihati": "west bengal", "sambhal": "uttar pradesh",
-    "nadiad": "gujarat", "yamunanagar": "haryana", "english bazar": "west bengal",
-    "unnao": "uttar pradesh", "secunderabad": "telangana", "margao": "goa",
-    "vasco da gama": "goa", "porbandar": "gujarat", "anand": "gujarat",
-    "ratlam": "madhya pradesh", "morbi": "gujarat", "pondicherry": "puducherry",
-    "puducherry": "puducherry", "gandhidham": "gujarat", "veraval": "gujarat",
-    "madras": "tamil nadu", "bombay": "maharashtra", "calcutta": "west bengal",
-}
+# CITY_STATE_MAP = {
+#     # Metro cities
+#     "chennai": "tamil nadu", "mumbai": "maharashtra", "bengaluru": "karnataka",
+#     "bangalore": "karnataka", "delhi": "delhi", "new delhi": "delhi",
+#     "kolkata": "west bengal", "hyderabad": "telangana", "pune": "maharashtra",
+#     "ahmedabad": "gujarat", "surat": "gujarat", "jaipur": "rajasthan",
+#     "lucknow": "uttar pradesh", "kanpur": "uttar pradesh", "nagpur": "maharashtra",
+#     "indore": "madhya pradesh", "thane": "maharashra", "bhopal": "madhya pradesh",
+#     "visakhapatnam": "andhra pradesh", "pimpri-chinchwad": "maharashtra",
+#     "patna": "bihar", "vadodara": "gujarat", "ghaziabad": "uttar pradesh",
+#     "ludhiana": "punjab", "agra": "uttar pradesh", "nashik": "maharashtra",
+#     "faridabad": "haryana", "meerut": "uttar pradesh", "rajkot": "gujarat",
+#     "kalyan-dombivali": "maharashtra", "vasai-virar": "maharashtra",
+#     "varanasi": "uttar pradesh", "srinagar": "jammu and kashmir",
+#     "aurangabad": "maharashtra", "dhanbad": "jharkhand", "amritsar": "punjab",
+#     "navi mumbai": "maharashtra", "allahabad": "uttar pradesh",
+#     "prayagraj": "uttar pradesh", "howrah": "west bengal", "ranchi": "jharkhand",
+#     "gwalior": "madhya pradesh", "jabalpur": "madhya pradesh",
+#     "coimbatore": "tamil nadu", "vijayawada": "andhra pradesh", "jodhpur": "rajasthan",
+#     "madurai": "tamil nadu", "raipur": "chhattisgarh", "kota": "rajasthan",
+#     "chandigarh": "chandigarh", "guwahati": "assam", "solapur": "maharashtra",
+#     "hubballi-dharwad": "karnataka", "bareilly": "uttar pradesh", "moradabad": "uttar pradesh",
+#     "mysore": "karnataka", "mysuru": "karnataka", "gurgaon": "haryana",
+#     "gurugram": "haryana", "aligarh": "uttar pradesh", "jalandhar": "punjab",
+#     "tiruchirappalli": "tamil nadu", "bhubaneswar": "odisha", "salem": "tamil nadu",
+#     "warangal": "telangana", "guntur": "andhra pradesh", "bhiwandi": "maharashtra",
+#     "saharanpur": "uttar pradesh", "gorakhpur": "uttar pradesh", "bikaner": "rajasthan",
+#     "amravati": "maharashtra", "noida": "uttar pradesh", "jamshedpur": "jharkhand",
+#     "bhilai": "chhattisgarh", "cuttack": "odisha", "firozabad": "uttar pradesh",
+#     "kochi": "kerala", "cochin": "kerala", "nellore": "andhra pradesh",
+#     "bhavnagar": "gujarat", "dehradun": "uttarakhand", "durgapur": "west bengal",
+#     "asansol": "west bengal", "rourkela": "odisha", "nanded": "maharashtra",
+#     "kolhapur": "maharashtra", "ajmer": "rajasthan", "akola": "maharashtra",
+#     "gulbarga": "karnataka", "jamnagar": "gujarat", "ujjain": "madhya pradesh",
+#     "loni": "uttar pradesh", "siliguri": "west bengal", "jhansi": "uttar pradesh",
+#     "ulhasnagar": "maharashtra", "jammu": "jammu and kashmir", "sangli-miraj": "maharashtra",
+#     "mangalore": "karnataka", "erode": "tamil nadu", "belgaum": "karnataka",
+#     "belagavi": "karnataka", "ambattur": "tamil nadu", "tirunelveli": "tamil nadu",
+#     "malegaon": "maharashtra", "gaya": "bihar", "jalgaon": "maharashtra",
+#     "udaipur": "rajasthan", "maheshtala": "west bengal", "tiruppur": "tamil nadu",
+#     "davanagere": "karnataka", "kozhikode": "kerala", "calicut": "kerala",
+#     "akola": "maharashtra", "kurnool": "andhra pradesh", "rajpur sonarpur": "west bengal",
+#     "rajahmundry": "andhra pradesh", "bokaro": "jharkhand", "south dumdum": "west bengal",
+#     "bellary": "karnataka", "patiala": "punjab", "gopalpur": "west bengal",
+#     "agartala": "tripura", "bhagalpur": "bihar", "muzaffarnagar": "uttar pradesh",
+#     "bhatpara": "west bengal", "panihati": "west bengal", "latur": "maharashtra",
+#     "dhule": "maharashtra", "rohtak": "haryana", "korba": "chhattisgarh",
+#     "bhilwara": "rajasthan", "brahmapur": "odisha", "berhampur": "odisha",
+#     "muzaffarpur": "bihar", "ahmednagar": "maharashtra", "mathura": "uttar pradesh",
+#     "kollam": "kerala", "avadi": "tamil nadu", "kadapa": "andhra pradesh",
+#     "kamarhati": "west bengal", "sambalpur": "odisha", "bilaspur": "chhattisgarh",
+#     "shahjahanpur": "uttar pradesh", "satara": "maharashtra", "bijapur": "karnataka",
+#     "rampur": "uttar pradesh", "shivamogga": "karnataka", "shimoga": "karnataka",
+#     "chandrapur": "maharashtra", "junagadh": "gujarat", "thrissur": "kerala",
+#     "alwar": "rajasthan", "bardhaman": "west bengal", "kulti": "west bengal",
+#     "kakinada": "andhra pradesh", "nizamabad": "telangana", "parbhani": "maharashtra",
+#     "tumkur": "karnataka", "khammam": "telangana", "ozhukarai": "puducherry",
+#     "bihar sharif": "bihar", "panipat": "haryana", "darbhanga": "bihar",
+#     "bally": "west bengal", "aizawl": "mizoram", "dewas": "madhya pradesh",
+#     "ichalkaranji": "maharashtra", "karnal": "haryana", "bathinda": "punjab",
+#     "jalna": "maharashtra", "eluru": "andhra pradesh", "kirari suleman nagar": "delhi",
+#     "barasat": "west bengal", "purnia": "bihar", "satna": "madhya pradesh",
+#     "mira-bhayandar": "maharashtra", "karimnagar": "telangana", "etawah": "uttar pradesh",
+#     "bharatpur": "rajasthan", "begusarai": "bihar", "new delhi": "delhi",
+#     "chhapra": "bihar", "kadapa": "andhra pradesh", "ramagundam": "telangana",
+#     "pali": "rajasthan", "satna": "madhya pradesh", "vizianagaram": "andhra pradesh",
+#     "katihar": "bihar", "hardwar": "uttarakhand", "haridwar": "uttarakhand",
+#     "sonipat": "haryana", "nagercoil": "tamil nadu", "thanjavur": "tamil nadu",
+#     "murwara": "madhya pradesh", "naihati": "west bengal", "sambhal": "uttar pradesh",
+#     "nadiad": "gujarat", "yamunanagar": "haryana", "english bazar": "west bengal",
+#     "unnao": "uttar pradesh", "secunderabad": "telangana", "margao": "goa",
+#     "vasco da gama": "goa", "porbandar": "gujarat", "anand": "gujarat",
+#     "ratlam": "madhya pradesh", "morbi": "gujarat", "pondicherry": "puducherry",
+#     "puducherry": "puducherry", "gandhidham": "gujarat", "veraval": "gujarat",
+#     "madras": "tamil nadu", "bombay": "maharashtra", "calcutta": "west bengal",
+# }
 
-# City aliases for normalization
-CITY_ALIASES = {
-    "bangalore": "bengaluru", "bombay": "mumbai", "calcutta": "kolkata",
-    "madras": "chennai", "mysore": "mysuru", "cochin": "kochi",
-    "calicut": "kozhikode", "trivandrum": "thiruvananthapuram",
-    "poona": "pune", "baroda": "vadodara", "allahabad": "prayagraj",
-}
+# # City aliases for normalization
+# CITY_ALIASES = {
+#     "bangalore": "bengaluru", "bombay": "mumbai", "calcutta": "kolkata",
+#     "madras": "chennai", "mysore": "mysuru", "cochin": "kochi",
+#     "calicut": "kozhikode", "trivandrum": "thiruvananthapuram",
+#     "poona": "pune", "baroda": "vadodara", "allahabad": "prayagraj",
+# }
 
-# Parcel validation constants
-MAX_WEIGHT_KG = 300
-MAX_DIM_CM = 300
-VOLUMETRIC_DIVISOR = 5000  # standard for most Indian carriers
+# # Parcel validation constants
+# MAX_WEIGHT_KG = 300
+# MAX_DIM_CM = 300
+# VOLUMETRIC_DIVISOR = 5000  # standard for most Indian carriers
 
-# Address type keywords
-RESIDENTIAL_KEYWORDS = {"home", "house", "flat", "apartment", "villa", "lane", "society"}
-BUSINESS_KEYWORDS = {"pvt", "ltd", "llp", "inc", "corp", "technologies", "enterprises"}
+# # Address type keywords
+# RESIDENTIAL_KEYWORDS = {"home", "house", "flat", "apartment", "villa", "lane", "society"}
+# BUSINESS_KEYWORDS = {"pvt", "ltd", "llp", "inc", "corp", "technologies", "enterprises"}
 
-def infer_state_from_city(city: str) -> str | None:
-    """Try to infer state name from a given city using aliases and CITY_STATE_MAP.
+# def infer_state_from_city(city: str) -> str | None:
+#     """Try to infer state name from a given city using aliases and CITY_STATE_MAP.
 
-    Returns normalized state string (as in CITY_STATE_MAP values) or None when
-    inference is not possible.
-    """
-    if not city:
-        return None
+#     Returns normalized state string (as in CITY_STATE_MAP values) or None when
+#     inference is not possible.
+#     """
+#     if not city:
+#         return None
 
-    # Normalize city name
-    norm = city.strip().lower()
-    # remove common punctuation
-    for ch in [",", "."]:
-        norm = norm.replace(ch, "")
-    norm = " ".join(norm.split())
+#     # Normalize city name
+#     norm = city.strip().lower()
+#     # remove common punctuation
+#     for ch in [",", "."]:
+#         norm = norm.replace(ch, "")
+#     norm = " ".join(norm.split())
 
-    # map aliases
-    if norm in CITY_ALIASES:
-        norm = CITY_ALIASES[norm]
+#     # map aliases
+#     if norm in CITY_ALIASES:
+#         norm = CITY_ALIASES[norm]
 
-    # direct lookup
-    state = CITY_STATE_MAP.get(norm)
-    if state:
-        return state
+#     # direct lookup
+#     state = CITY_STATE_MAP.get(norm)
+#     if state:
+#         return state
 
-    # try simple heuristics: remove spaces/dashes
-    alt = norm.replace(" ", "-")
-    state = CITY_STATE_MAP.get(alt)
-    if state:
-        return state
+#     # try simple heuristics: remove spaces/dashes
+#     alt = norm.replace(" ", "-")
+#     state = CITY_STATE_MAP.get(alt)
+#     if state:
+#         return state
 
-    alt2 = norm.replace("-", " ")
-    state = CITY_STATE_MAP.get(alt2)
-    if state:
-        return state
+#     alt2 = norm.replace("-", " ")
+#     state = CITY_STATE_MAP.get(alt2)
+#     if state:
+#         return state
 
-    return None
+#     return None
 
-def normalize_phone(phone: str) -> str | None:
-    """Normalize Indian phone numbers to 10 digits."""
-    if not phone:
-        return None
-    digits = re.sub(r"\D", "", phone)
-    if digits.startswith("91") and len(digits) == 12:
-        digits = digits[2:]
-    if len(digits) != 10 or not digits[0] in "6789":
-        return None  # Invalid Indian mobile number
-    return digits
-
-
-def validate_pincode(pincode: str) -> bool:
-    """Validate Indian 6-digit pincode."""
-    return bool(pincode and re.fullmatch(r"[1-9][0-9]{5}", pincode))
+# def normalize_phone(phone: str) -> str | None:
+#     """Normalize Indian phone numbers to 10 digits."""
+#     if not phone:
+#         return None
+#     digits = re.sub(r"\D", "", phone)
+#     if digits.startswith("91") and len(digits) == 12:
+#         digits = digits[2:]
+#     if len(digits) != 10 or not digits[0] in "6789":
+#         return None  # Invalid Indian mobile number
+#     return digits
 
 
-def validate_parcel_dimensions(weight: float, length: float, width: float, height: float) -> str | None:
+# def validate_pincode(pincode: str) -> bool:
+#     """Validate Indian 6-digit pincode."""
+#     return bool(pincode and re.fullmatch(r"[1-9][0-9]{5}", pincode))
+
+
+# def validate_parcel_dimensions(weight: float, length: float, width: float, height: float) -> str | None:
     
-    if weight <= 0:
-        return "Parcel weight must be greater than 0."
-    if weight > MAX_WEIGHT_KG:
-        return f"Parcel weight {weight}kg exceeds max allowed ({MAX_WEIGHT_KG}kg)."
-    for name, val in [("length", length), ("width", width), ("height", height)]:
-        if val < 0:
-            return f"{name.capitalize()} cannot be negative."
-        if val > MAX_DIM_CM:
-            return f"{name.capitalize()} {val}cm exceeds max allowed ({MAX_DIM_CM}cm)."
-    return None
+#     if weight <= 0:
+#         return "Parcel weight must be greater than 0."
+#     if weight > MAX_WEIGHT_KG:
+#         return f"Parcel weight {weight}kg exceeds max allowed ({MAX_WEIGHT_KG}kg)."
+#     for name, val in [("length", length), ("width", width), ("height", height)]:
+#         if val < 0:
+#             return f"{name.capitalize()} cannot be negative."
+#         if val > MAX_DIM_CM:
+#             return f"{name.capitalize()} {val}cm exceeds max allowed ({MAX_DIM_CM}cm)."
+#     return None
 
 
-def compute_chargeable_weight(actual_kg: float, l: float, w: float, h: float) -> float:
-    """Returns the higher of actual vs volumetric weight."""
-    volumetric_kg = (l * w * h) / VOLUMETRIC_DIVISOR
-    return round(max(actual_kg, volumetric_kg), 2)
+# def compute_chargeable_weight(actual_kg: float, l: float, w: float, h: float) -> float:
+#     """Returns the higher of actual vs volumetric weight."""
+#     volumetric_kg = (l * w * h) / VOLUMETRIC_DIVISOR
+#     return round(max(actual_kg, volumetric_kg), 2)
 
 
-def infer_service_type(weight_kg: float, carrier_slug: str) -> str:
-    """Rule-based service type selection."""
-    """ this is experimental and should be verified for other carriers as well or removed"""
-    if carrier_slug == "delhivery":
-        return "delhivery-surface" if weight_kg > 10 else "delhivery"
-    if weight_kg > 30:
-        return "surface"
-    return "express"
+# def infer_service_type(weight_kg: float, carrier_slug: str) -> str:
+#     """Rule-based service type selection."""
+#     """ this is experimental and should be verified for other carriers as well or removed"""
+#     if carrier_slug == "delhivery":
+#         return "delhivery-surface" if weight_kg > 10 else "delhivery"
+#     if weight_kg > 30:
+#         return "surface"
+#     return "express"
 
 
-def infer_address_type(company: str, street: str) -> str:
-    """Infer address type from company and street info."""
-    text = (company + " " + street).lower()
-    if any(k in text for k in BUSINESS_KEYWORDS):
-        return "business"
-    if any(k in text for k in RESIDENTIAL_KEYWORDS):
-        return "residential"
-    return "business" if company else "residential"
+# def infer_address_type(company: str, street: str) -> str:
+#     """Infer address type from company and street info."""
+#     text = (company + " " + street).lower()
+#     if any(k in text for k in BUSINESS_KEYWORDS):
+#         return "business"
+#     if any(k in text for k in RESIDENTIAL_KEYWORDS):
+#         return "residential"
+#     return "business" if company else "residential"
 
 
-def normalize_date(date_str: str) -> str | None:
-    """Try to normalize date to YYYY-MM-DD."""
-    for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d %b %Y"):
-        try:
-            return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
-        except ValueError:
-            continue
-    return None
-'''
+# def normalize_date(date_str: str) -> str | None:
+#     """Try to normalize date to YYYY-MM-DD."""
+#     for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d %b %Y"):
+#         try:
+#             return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
+#         except ValueError:
+#             continue
+#     return None
+
 async def get_tracking_details(tracking_number: str) -> dict[str, Any] | None:
     headers = {
         "Content-Type": "application/json",
@@ -307,9 +306,19 @@ async def make_create_shipment_request(shipment_data: dict) -> dict[str, Any] | 
             )
             response.raise_for_status()
             return response.json()
+        except httpx.HTTPStatusError as e:
+            # This captures 4xx and 5xx errors specifically
+            error_details = e.response.text
+            print(f"API Error ({e.response.status_code}): {error_details}")
+            return {"error": error_details, "status_code": e.response.status_code}
+        except httpx.RequestError as e:
+            # This captures network issues (DNS, Timeout, etc.)
+            print(f"Network/Connection Error: {str(e)}")
+            return {"error": str(e), "type": "network_error"}
         except Exception as e:
-            print(f"Error in create shipment request: {str(e)}")
-            return None
+            # This catches anything else (like JSON parsing errors)
+            print(f"Unexpected Error: {str(e)}")
+            return {"error": str(e), "type": "unexpected_error"}
 
 
 async def make_docket_allocation_request(allocation_data: dict) -> dict[str, Any] | None:
@@ -530,6 +539,17 @@ def _format_shipment_creation_response(data: dict) -> str:
     
     if not data:
         return "Failed to create shipment - No response from API"
+    
+    # Check for error responses
+    if data.get("error"):
+        error_msg = data.get("error")
+        status_code = data.get("status_code", "")
+        error_type = data.get("type", "")
+        if status_code:
+            return f"Shipment creation failed: {error_msg} (Status: {status_code})"
+        elif error_type:
+            return f"Shipment creation failed: {error_msg} ({error_type})"
+        return f"Shipment creation failed: {error_msg}"
     
     # Check meta for errors
     meta = data.get("meta", {})
@@ -803,87 +823,215 @@ async def allocate_docket(
 
 @mcp.tool()
 async def create_shipment(
-    carrier_description: str = "",            # LLM-provided natural language carrier description
-    service_type: str = "",                  # kept as required input for service selection
+    carrier_description: str = "",            # LLM-provided natural language carrier description (e.g., "bluedart", "delhivery")
+    slug: str = "",                          # Direct carrier slug (if provided, overrides carrier_description)
+    service_type: str = "",                  # service type (e.g., "Apex", "express")
     customer_reference: str = "",
+    description: str = "",                   # Shipment description
+    is_to_pay: bool = False,                # Is payment to be collected from recipient
     # Shipper details
     ship_from_name: str = "",
     ship_from_company: str = "",
     ship_from_street1: str = "",
+    ship_from_street2: str = "",
+    ship_from_street3: str = "",
     ship_from_city: str = "",
     ship_from_state: str = "",
     ship_from_pincode: str = "",
     ship_from_phone: str = "",
     ship_from_email: str = "",
+    ship_from_fax: str = "",
+    ship_from_alias_name: str = "",
+    ship_from_is_primary: bool = True,
     # Consignee details
     ship_to_name: str = "",
     ship_to_company: str = "",
     ship_to_street1: str = "",
+    ship_to_street2: str = "",
+    ship_to_street3: str = "",
     ship_to_city: str = "",
     ship_to_state: str = "",
     ship_to_pincode: str = "",
     ship_to_phone: str = "",
-    # Parcel details
+    ship_to_email: str = "",
+    ship_to_fax: str = "",
+    ship_to_alias_name: str = "",
+    ship_to_is_primary: bool = True,
+    # Parcel details (JSON string for multiple parcels)
+    parcels_json: str = "",                 # JSON array of parcel objects
+    # Item details (JSON string for multiple items)
+    items_json: str = "",                   # JSON array of item objects
+    # Legacy single parcel/item support
     parcel_description: str = "",
     parcel_weight_kg: float = 0.0,
     parcel_length_cm: float = 0.0,
     parcel_width_cm: float = 0.0,
     parcel_height_cm: float = 0.0,
-    # Item details
     item_description: str = "",
     item_quantity: int = 1,
     item_price: float = 0.0,
-    # Optional fields
-    ship_from_street2: str = "",
-    ship_to_street2: str = "",
-    ship_to_email: str = "",
+    item_hsn_code: str = "",
+    item_sku: str = "",
+    # Additional fields
     is_cod: bool = False,
     cod_amount: float = 0.0,
     invoice_number: str = "",
     invoice_date: str = "",
     is_document: bool = False,
     ship_from_gstin: str = "",
-    item_hsn_code: str = "",
-    item_sku: str = ""
+    gst_invoices_json: str = ""             # JSON array of GST invoice objects
 ) -> str:
     
-    # Use carrier_description directly or default to "auto" for rule-based routing
-    actual_carrier_slug = carrier_description.lower().strip() if carrier_description else "auto"
+    # Determine actual slug: use provided slug, or extract from carrier_description, or fallback to "auto"
+    if slug:
+        actual_carrier_slug = slug.lower().strip()
+    else:
+        actual_carrier_slug = _get_slug_from_description(carrier_description)
     
     if ship_from_phone:
         phone_digits_from = re.sub(r"\D", "", ship_from_phone)
         if len(phone_digits_from) >= 10:
             ship_from_phone = phone_digits_from[-10:]  # Take last 10 digits
-        # If less than 10 digits, pass as-is
     
     if ship_to_phone:
         phone_digits_to = re.sub(r"\D", "", ship_to_phone)
         if len(phone_digits_to) >= 10:
             ship_to_phone = phone_digits_to[-10:]  # Take last 10 digits
-        # If less than 10 digits, pass as-is
-    chargeable_weight = parcel_weight_kg
 
-    # Simple address type logic - based on company name presence only
+    # Simple address type logic - based on company name presence
     ship_from_type = "business" if ship_from_company else "residential"
     ship_to_type = "business" if ship_to_company else "residential"
 
-    # Build shipment data structure with only required fields
+    # Parse JSON arrays if provided, otherwise use legacy single item/parcel support
+    parcels_list = []
+    items_list = []
+    gst_invoices_list = []
+    
+    # Parse parcels from JSON or use legacy single parcel
+    if parcels_json:
+        try:
+            parcels_list = json.loads(parcels_json)
+        except json.JSONDecodeError:
+            return f"Invalid JSON format for parcels_json: {parcels_json}"
+    elif parcel_weight_kg > 0:
+        # Legacy: create parcel from individual fields
+        parcels_list = [{
+            "description": parcel_description,
+            "box_type": "custom",
+            "quantity": 1,
+            "weight": {
+                "value": parcel_weight_kg,
+                "unit": "kg"
+            },
+            "dimension": {
+                "width": parcel_width_cm,
+                "height": parcel_height_cm,
+                "length": parcel_length_cm,
+                "unit": "cm"
+            }
+        }]
+    
+    # Parse items from JSON or use legacy single item
+    if items_json:
+        try:
+            items_list = json.loads(items_json)
+        except json.JSONDecodeError:
+            return f"Invalid JSON format for items_json: {items_json}"
+    elif item_description:
+        # Legacy: create item from individual fields
+        items_list = [{
+            "description": item_description,
+            "origin_country": "IN",
+            "sku": item_sku,
+            "hs_code": item_hsn_code,
+            "variant": "",
+            "quantity": item_quantity,
+            "price": {
+                "amount": item_price,
+                "currency": "INR"
+            },
+            "weight": {
+                "value": 0,
+                "unit": "kg"
+            }
+        }]
+    
+    # Add items to parcels if items exist
+    if items_list and parcels_list:
+        for parcel in parcels_list:
+            if "items" not in parcel:
+                parcel["items"] = items_list
+    elif items_list and not parcels_list:
+        # Create default parcel if only items provided
+        parcels_list = [{
+            "description": parcel_description or "Default",
+            "box_type": "custom",
+            "quantity": 1,
+            "weight": {
+                "value": parcel_weight_kg or 0.5,
+                "unit": "kg"
+            },
+            "dimension": {
+                "width": parcel_width_cm or 10,
+                "height": parcel_height_cm or 10,
+                "length": parcel_length_cm or 10,
+                "unit": "cm"
+            },
+            "items": items_list
+        }]
+    
+    # Parse GST invoices from JSON or use legacy single invoice
+    if gst_invoices_json:
+        try:
+            gst_invoices_list = json.loads(gst_invoices_json)
+        except json.JSONDecodeError:
+            return f"Invalid JSON format for gst_invoices_json: {gst_invoices_json}"
+    elif invoice_number and invoice_date:
+        # Legacy: create single invoice from individual fields
+        total_value = item_price * item_quantity
+        gst_invoices_list = [{
+            "invoice_number": invoice_number,
+            "invoice_date": invoice_date,
+            "invoice_value": total_value,
+            "ewaybill_number": ""
+        }]
+
+    # Build shipment data structure matching eShipz API format
     shipment_data = {
-        "description": parcel_description,
+        "billing": {
+            "paid_by": "shipper"
+        },
+        "vendor_id": None,
+        "description": description or parcel_description or carrier_description or actual_carrier_slug.upper(),
+        "slug": actual_carrier_slug,
         "purpose": "commercial",
         "order_source": "manual",
         "parcel_contents": parcel_description,
         "is_document": is_document,
+        "service_type": service_type or None,
+        "rate": {
+            "amount": 0,
+            "currency": "INR"
+        },
+        "charged_weight": {
+            "unit": "KG",
+            "value": parcel_weight_kg
+        },
         "customer_reference": customer_reference,
         "invoice_number": invoice_number,
         "invoice_date": invoice_date,
         "is_cod": is_cod,
+        "collect_on_delivery": {
+            "amount": cod_amount if is_cod else 0,
+            "currency": "INR"
+        },
         "shipment": {
             "ship_from": {
                 "contact_name": ship_from_name,
                 "company_name": ship_from_company,
                 "street1": ship_from_street1,
                 "street2": ship_from_street2,
+                "street3": ship_from_street3,
                 "city": ship_from_city,
                 "state": ship_from_state,
                 "postal_code": ship_from_pincode,
@@ -891,13 +1039,17 @@ async def create_shipment(
                 "type": ship_from_type,
                 "phone": ship_from_phone,
                 "email": ship_from_email,
-                "tax_id": ship_from_gstin
+                "fax": ship_from_fax,
+                "tax_id": ship_from_gstin,
+                "alias_name": ship_from_alias_name,
+                "is_primary": ship_from_is_primary
             },
             "ship_to": {
                 "contact_name": ship_to_name,
                 "company_name": ship_to_company,
                 "street1": ship_to_street1,
                 "street2": ship_to_street2,
+                "street3": ship_to_street3,
                 "city": ship_to_city,
                 "state": ship_to_state,
                 "postal_code": ship_to_pincode,
@@ -905,13 +1057,17 @@ async def create_shipment(
                 "type": ship_to_type,
                 "phone": ship_to_phone,
                 "email": ship_to_email if ship_to_email else ship_from_email,
-                "tax_id": ""
+                "fax": ship_to_fax,
+                "tax_id": "",
+                "alias_name": ship_to_alias_name,
+                "is_primary": ship_to_is_primary
             },
             "return_to": {
                 "contact_name": ship_from_name,
                 "company_name": ship_from_company,
                 "street1": ship_from_street1,
                 "street2": ship_from_street2,
+                "street3": ship_from_street3,
                 "city": ship_from_city,
                 "state": ship_from_state,
                 "postal_code": ship_from_pincode,
@@ -919,49 +1075,17 @@ async def create_shipment(
                 "type": ship_from_type,
                 "phone": ship_from_phone,
                 "email": ship_from_email,
-                "tax_id": ship_from_gstin
+                "fax": ship_from_fax,
+                "tax_id": ship_from_gstin,
+                "alias_name": ship_from_alias_name,
+                "is_primary": ship_from_is_primary
             },
             "is_reverse": False,
-            "is_to_pay": False,
-            "parcels": [
-                {
-                    "description": parcel_description,
-                    "box_type": "custom",
-                    "quantity": 1,
-                    "weight": {
-                        "value": parcel_weight_kg,
-                        "unit": "kg"
-                    },
-                    "dimension": {
-                        "width": parcel_width_cm,
-                        "height": parcel_height_cm,
-                        "length": parcel_length_cm,
-                        "unit": "cm"
-                    },
-                    "items": [
-                        {
-                            "description": item_description,
-                            "quantity": item_quantity,
-                            "price": item_price
-                        }
-                    ]
-                }
-            ]
+            "is_to_pay": is_to_pay,
+            "parcels": parcels_list if parcels_list else []
         },
-        "gst_invoices": []
+        "gst_invoices": gst_invoices_list
     }
-    
-    # Add GST invoice if details provided
-    if invoice_number and invoice_date:
-        total_value = item_price * item_quantity
-        shipment_data["gst_invoices"] = [
-            {
-                "invoice_number": invoice_number,
-                "invoice_date": invoice_date,
-                "invoice_value": total_value,
-                "ewaybill_number": ""
-            }
-        ]
     
     data = await make_create_shipment_request(shipment_data)
     
