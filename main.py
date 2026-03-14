@@ -18,6 +18,8 @@ oauth_provider = EshipzOAuthProvider()
 # Initialize FastMCP server with OAuth support
 mcp = FastMCP(
     "eshipz-mcp",
+    host=os.getenv("HOST", "0.0.0.0"),
+    port=int(os.getenv("PORT", "10000")),
     auth_server_provider=oauth_provider,
     auth=AuthSettings(
         issuer_url=MCP_SERVER_BASE_URL,
@@ -1458,7 +1460,4 @@ if __name__ == "__main__":
     if "--stdio" in sys.argv:
         mcp.run(transport="stdio")
     else:
-        os.environ.setdefault("HOST", "0.0.0.0")
-        if not os.getenv("PORT"):
-            os.environ["PORT"] = "10000"
         mcp.run(transport="streamable-http")
