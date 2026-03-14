@@ -1,1 +1,1 @@
-web: python main.py --sse
+web: python main.py
