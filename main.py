@@ -1,17 +1,34 @@
 import json
 from typing import Any
 import httpx
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.auth.settings import AuthSettings, ClientRegistrationOptions
 from dotenv import load_dotenv
 import os
 import re
 from datetime import datetime 
+from auth import EshipzOAuthProvider
 
 # Load environment variables
 load_dotenv()
 
-# Initialize FastMCP server
-mcp = FastMCP("eshipz-mcp")
+MCP_SERVER_BASE_URL = os.getenv("MCP_SERVER_BASE_URL", "http://localhost:10000")
+oauth_provider = EshipzOAuthProvider()
+
+# Initialize FastMCP server with OAuth support
+mcp = FastMCP(
+    "eshipz-mcp",
+    auth_server_provider=oauth_provider,
+    auth=AuthSettings(
+        issuer_url=MCP_SERVER_BASE_URL,
+        resource_server_url=MCP_SERVER_BASE_URL,
+        client_registration_options=ClientRegistrationOptions(
+            enabled=True,
+            valid_scopes=["eshipz"],
+            default_scopes=["eshipz"],
+        ),
+    ),
+)
 
 # Constants
 API_BASE_URL = os.getenv("API_BASE_URL", "https://app.eshipz.com")
@@ -21,6 +38,25 @@ ESHIPZ_CARRIER_PERFORMANCE_URL = "https://ds.eshipz.com/performance_score/cps_sc
 ESHIPZ_API_CREATE_SHIPMENT_URL = f"{API_BASE_URL}/api/v1/create-shipments/rule-based"
 ESHIPZ_API_DOCKET_ALLOCATION_URL = f"{API_BASE_URL}/api/v1/docket-allocation"
 ESHIPZ_API_ORDERS_URL = "https://orders.eshipz.com/api/v1/orders"
+
+
+def _resolve_eshipz_token(ctx: Context | None = None) -> str:
+    if os.getenv("USE_BEARER_AS_ESHIPZ_TOKEN", "false").lower() != "true":
+        return ESHIPZ_TOKEN
+
+    if ctx is not None:
+        try:
+            request = ctx.request_context.request
+            if request is not None and hasattr(request, "headers"):
+                auth_header = request.headers.get("authorization", "")
+                if auth_header.lower().startswith("bearer "):
+                    bearer_token = auth_header.split(" ", 1)[1].strip()
+                    if bearer_token:
+                        return bearer_token
+        except Exception:
+            pass
+
+    return ESHIPZ_TOKEN
 
 # Map common natural language descriptions to exact eShipz API slugs
 CARRIER_SLUG_MAP = {
@@ -251,10 +287,11 @@ def _get_slug_from_description(description: str) -> str:
 #             continue
 #     return None
 
-async def get_tracking_details(tracking_number: str) -> dict[str, Any] | None:
+async def get_tracking_details(tracking_number: str, api_token: str | None = None) -> dict[str, Any] | None:
+    resolved_token = api_token or ESHIPZ_TOKEN
     headers = {
         "Content-Type": "application/json",
-        "X-API-TOKEN": ESHIPZ_TOKEN
+        "X-API-TOKEN": resolved_token
     }
     payload = json.dumps({"track_id": tracking_number})
     async with httpx.AsyncClient() as client:
@@ -268,10 +305,11 @@ async def get_tracking_details(tracking_number: str) -> dict[str, Any] | None:
             return None
 
 # the api call is made here after the carrier performance mcp tool invokes the make_carrier_performance_request function 
-async def make_carrier_performance_request(source_pin: str, destination_pin: str) -> dict[str, Any] | None:
+async def make_carrier_performance_request(source_pin: str, destination_pin: str, api_token: str | None = None) -> dict[str, Any] | None:
+    resolved_token = api_token or ESHIPZ_TOKEN
     headers = {
         "Content-Type": "application/json",
-        "X-API-TOKEN": ESHIPZ_TOKEN
+        "X-API-TOKEN": resolved_token
     }
     payload = json.dumps({
         "sender_postal_code": int(source_pin),
@@ -291,10 +329,11 @@ async def make_carrier_performance_request(source_pin: str, destination_pin: str
             print(f"Error in carrier performance request: {str(e)}")
             return None
 
-async def make_create_shipment_request(shipment_data: dict) -> dict[str, Any] | None:
+async def make_create_shipment_request(shipment_data: dict, api_token: str | None = None) -> dict[str, Any] | None:
+    resolved_token = api_token or ESHIPZ_TOKEN
     headers = {
         "Content-Type": "application/json",
-        "X-API-TOKEN": ESHIPZ_TOKEN
+        "X-API-TOKEN": resolved_token
     }
     async with httpx.AsyncClient() as client:
         try:
@@ -321,10 +360,11 @@ async def make_create_shipment_request(shipment_data: dict) -> dict[str, Any] | 
             return {"error": str(e), "type": "unexpected_error"}
 
 
-async def make_docket_allocation_request(allocation_data: dict) -> dict[str, Any] | None:
+async def make_docket_allocation_request(allocation_data: dict, api_token: str | None = None) -> dict[str, Any] | None:
+    resolved_token = api_token or ESHIPZ_TOKEN
     headers = {
         "Content-Type": "application/json",
-        "X-API-TOKEN": ESHIPZ_TOKEN
+        "X-API-TOKEN": resolved_token
     }
     async with httpx.AsyncClient() as client:
         try:
@@ -341,11 +381,12 @@ async def make_docket_allocation_request(allocation_data: dict) -> dict[str, Any
             return None
 
 
-async def fetch_order_by_id(order_id: str) -> dict[str, Any] | None:
+async def fetch_order_by_id(order_id: str, api_token: str | None = None) -> dict[str, Any] | None:
     """Fetch a single order by order ID from the eShipz Orders API"""
+    resolved_token = api_token or ESHIPZ_TOKEN
     headers = {
         "Content-Type": "application/json",
-        "X-API-TOKEN": ESHIPZ_TOKEN
+        "X-API-TOKEN": resolved_token
     }
     # URL format: https://orders.eshipz.com/api/v1/orders/{order_id}
     url = f"{ESHIPZ_API_ORDERS_URL}/{order_id}"
@@ -730,9 +771,10 @@ async def lookup_pincode(pincode: str) -> dict[str, Any] | None:
     return None
 '''
 @mcp.tool()
-async def get_tracking(tracking_number: str) -> str:
+async def get_tracking(tracking_number: str, ctx: Context) -> str:
+    api_token = _resolve_eshipz_token(ctx)
     
-    data = await get_tracking_details(tracking_number) #invoking the function to perform the api call
+    data = await get_tracking_details(tracking_number, api_token) #invoking the function to perform the api call
     
     if not data:
         return " Tracking information could not be retrieved. Please verify the tracking number."
@@ -765,9 +807,10 @@ async def get_tracking(tracking_number: str) -> str:
     
     
 @mcp.tool()
-async def get_carrier_performance(source_pin: str, destination_pin: str) -> str:
+async def get_carrier_performance(source_pin: str, destination_pin: str, ctx: Context) -> str:
+    api_token = _resolve_eshipz_token(ctx)
     
-    data = await make_carrier_performance_request(source_pin, destination_pin) # invoking the function to perform the api call
+    data = await make_carrier_performance_request(source_pin, destination_pin, api_token) # invoking the function to perform the api call
     
     if not data:
         return f" Carrier performance data could not be retrieved for route {source_pin} → {destination_pin}.\n   Please verify the PIN codes and try again."
@@ -789,8 +832,10 @@ async def allocate_docket(
     payment_mode: str,
     order_reference: str = "",
     box_count: int = 1,
-    return_box_series: bool = True
+    return_box_series: bool = True,
+    ctx: Context = None
 ) -> str:
+    api_token = _resolve_eshipz_token(ctx)
     
     
     allocation_data = {
@@ -808,7 +853,7 @@ async def allocate_docket(
     if order_reference:
         allocation_data["order_reference"] = order_reference
     
-    data = await make_docket_allocation_request(allocation_data)
+    data = await make_docket_allocation_request(allocation_data, api_token)
     
     if not data:
         return "Docket allocation failed. Please check carrier_id and PIN codes."
@@ -879,8 +924,10 @@ async def create_shipment(
     invoice_date: str = "",
     is_document: bool = False,
     ship_from_gstin: str = "",
-    gst_invoices_json: str = ""             # JSON array of GST invoice objects
+    gst_invoices_json: str = "",            # JSON array of GST invoice objects
+    ctx: Context = None
 ) -> str:
+    api_token = _resolve_eshipz_token(ctx)
     
     # Determine actual slug: use provided slug, or extract from carrier_description, or fallback to "auto"
     if slug:
@@ -1093,7 +1140,7 @@ async def create_shipment(
         "gst_invoices": gst_invoices_list
     }
     
-    data = await make_create_shipment_request(shipment_data)
+    data = await make_create_shipment_request(shipment_data, api_token)
     
     if not data:
         return "Shipment creation failed. Please check all details and try again."
@@ -1122,7 +1169,8 @@ async def fetch_and_create_shipment(
     ship_from_pincode: str = "",
     ship_from_phone: str = "",
     ship_from_email: str = "",
-    ship_from_gstin: str = ""
+    ship_from_gstin: str = "",
+    ctx: Context = None
 ) -> str:
     """
     Fetch an order by order_id from eShipz Orders API and create a shipment using the order data.
@@ -1144,7 +1192,8 @@ async def fetch_and_create_shipment(
     """
     
     # Step 1: Fetch order from Orders API
-    order_data = await fetch_order_by_id(order_id)
+    api_token = _resolve_eshipz_token(ctx)
+    order_data = await fetch_order_by_id(order_id, api_token)
     
     if not order_data:
         return f"Failed to fetch order '{order_id}'. Please verify the order ID and try again."
@@ -1396,7 +1445,8 @@ async def fetch_and_create_shipment(
         is_cod=is_cod,
         cod_amount=cod_amount,
         invoice_number=invoice_number,
-        invoice_date=invoice_date
+        invoice_date=invoice_date,
+        ctx=ctx,
     )
     
     return result
@@ -1404,13 +1454,11 @@ async def fetch_and_create_shipment(
 
 if __name__ == "__main__":
     import sys
-    import uvicorn
 
-    if "--sse" in sys.argv or os.getenv("USE_SSE", "false").lower() == "true":
-        # FastMCP reads HOST and PORT from environment
+    if "--stdio" in sys.argv:
+        mcp.run(transport="stdio")
+    else:
         os.environ.setdefault("HOST", "0.0.0.0")
         if not os.getenv("PORT"):
             os.environ["PORT"] = "10000"
-        mcp.run(transport="sse")
-    else:
-        mcp.run(transport="stdio")
+        mcp.run(transport="streamable-http")
