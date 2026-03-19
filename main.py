@@ -1161,6 +1161,15 @@ async def fetch_and_create_shipment(
     # Optional carrier and service type
     carrier_description: str = "",
     service_type: str = "",
+    # Optional receiver details override (if receiver_address in order is empty/incomplete)
+    ship_to_name: str = "",
+    ship_to_company: str = "",
+    ship_to_street1: str = "",
+    ship_to_city: str = "",
+    ship_to_state: str = "",
+    ship_to_pincode: str = "",
+    ship_to_phone: str = "",
+    ship_to_email: str = "",
     # Optional shipper details override (if shipper_address in order is empty/incomplete)
     ship_from_name: str = "",
     ship_from_company: str = "",
@@ -1172,6 +1181,12 @@ async def fetch_and_create_shipment(
     ship_from_phone: str = "",
     ship_from_email: str = "",
     ship_from_gstin: str = "",
+    # Optional parcel/details override (if parcels in order are empty/incomplete)
+    parcel_description: str = "",
+    parcel_weight_kg: float | None = None,
+    parcel_length_cm: float | None = None,
+    parcel_width_cm: float | None = None,
+    parcel_height_cm: float | None = None,
     ctx: Context = None
 ) -> str:
     """
@@ -1187,7 +1202,9 @@ async def fetch_and_create_shipment(
         order_id: The order ID to fetch (e.g., "testtn10003", "INV/25-26/656776")
         carrier_description: Natural language carrier description (e.g., "bluedart", "delhivery")
         service_type: Service type for shipment
+        ship_to_*: Receiver details to override missing/incomplete order receiver data
         ship_from_*: Shipper details (required if shipper_address in order is empty or incomplete; company is optional)
+        parcel_*: Parcel values to override missing/incomplete order parcel data
     
     Returns:
         Success message with shipment details or error message with missing fields
@@ -1250,15 +1267,24 @@ async def fetch_and_create_shipment(
             invoice_value = float(gst_invoice.get("invoice_value", 0))
     
     # Extract receiver (ship_to) details
-    ship_to_name = f"{receiver_address.get('first_name', '')} {receiver_address.get('last_name', '')}".strip()
-    ship_to_company = (receiver_address.get("company_name", "") or "").strip()
-    ship_to_street1 = (receiver_address.get("address", "") or "").strip()
-    ship_to_city = (receiver_address.get("city", "") or "").strip()
-    ship_to_state = (receiver_address.get("state", "") or "").strip()
-    ship_to_pincode = (receiver_address.get("zipcode", "") or "").strip()
-    ship_to_phone = (receiver_address.get("phone", "") or "").strip()
-    ship_to_email = (receiver_address.get("email", "") or "").strip()
+    order_ship_to_name = f"{receiver_address.get('first_name', '')} {receiver_address.get('last_name', '')}".strip()
+    order_ship_to_company = (receiver_address.get("company_name", "") or "").strip()
+    order_ship_to_street1 = (receiver_address.get("address", "") or "").strip()
+    order_ship_to_city = (receiver_address.get("city", "") or "").strip()
+    order_ship_to_state = (receiver_address.get("state", "") or "").strip()
+    order_ship_to_pincode = (receiver_address.get("zipcode", "") or "").strip()
+    order_ship_to_phone = (receiver_address.get("phone", "") or "").strip()
+    order_ship_to_email = (receiver_address.get("email", "") or "").strip()
     ship_to_gstin = receiver_address.get("gst_number", "")
+
+    ship_to_name = (ship_to_name or order_ship_to_name).strip()
+    ship_to_company = (ship_to_company or order_ship_to_company).strip()
+    ship_to_street1 = (ship_to_street1 or order_ship_to_street1).strip()
+    ship_to_city = (ship_to_city or order_ship_to_city).strip()
+    ship_to_state = (ship_to_state or order_ship_to_state).strip()
+    ship_to_pincode = (ship_to_pincode or order_ship_to_pincode).strip()
+    ship_to_phone = (ship_to_phone or order_ship_to_phone).strip()
+    ship_to_email = (ship_to_email or order_ship_to_email).strip()
     
     # Extract shipper (ship_from) details - use provided values or order values
     if not ship_from_name and shipper_address.get("first_name"):
@@ -1315,33 +1341,56 @@ async def fetch_and_create_shipment(
         item_hsn_code = first_item.get("hs_code", "")
     
     # Extract parcel details (use first parcel if multiple)
-    parcel_weight_kg = 0.0
-    parcel_length_cm = 0.0
-    parcel_width_cm = 0.0
-    parcel_height_cm = 0.0
-    parcel_description = item_description  # Use item description as parcel description
+    order_parcel_weight_kg = 0.0
+    order_parcel_length_cm = 0.0
+    order_parcel_width_cm = 0.0
+    order_parcel_height_cm = 0.0
+    order_parcel_description = item_description  # Use item description as parcel description
     
     if parcels and len(parcels) > 0:
         first_parcel = parcels[0]
         weight_data = first_parcel.get("weight", {})
-        parcel_weight_kg = float(weight_data.get("value", 0) or 0)
+        order_parcel_weight_kg = float(weight_data.get("value", 0) or 0)
         
         # Convert weight to kg if needed
         weight_unit = weight_data.get("unit_of_measurement", "KG").upper()
         if weight_unit == "G" or weight_unit == "GRAM":
-            parcel_weight_kg = parcel_weight_kg / 1000
+            order_parcel_weight_kg = order_parcel_weight_kg / 1000
         
         dimensions = first_parcel.get("dimensions", {})
-        parcel_length_cm = float(dimensions.get("length", 0) or 0)
-        parcel_width_cm = float(dimensions.get("width", 0) or 0)
-        parcel_height_cm = float(dimensions.get("height", 0) or 0)
+        order_parcel_length_cm = float(dimensions.get("length", 0) or 0)
+        order_parcel_width_cm = float(dimensions.get("width", 0) or 0)
+        order_parcel_height_cm = float(dimensions.get("height", 0) or 0)
         
         # Convert dimensions to cm if needed
         dim_unit = dimensions.get("unit_of_measurement", "CM").upper()
         if dim_unit == "M" or dim_unit == "METER":
-            parcel_length_cm = parcel_length_cm * 100
-            parcel_width_cm = parcel_width_cm * 100
-            parcel_height_cm = parcel_height_cm * 100
+            order_parcel_length_cm = order_parcel_length_cm * 100
+            order_parcel_width_cm = order_parcel_width_cm * 100
+            order_parcel_height_cm = order_parcel_height_cm * 100
+
+    # Merge parcel overrides: explicit tool args take precedence over order values
+    parcel_weight_kg = (
+        float(parcel_weight_kg)
+        if parcel_weight_kg is not None
+        else order_parcel_weight_kg
+    )
+    parcel_length_cm = (
+        float(parcel_length_cm)
+        if parcel_length_cm is not None
+        else order_parcel_length_cm
+    )
+    parcel_width_cm = (
+        float(parcel_width_cm)
+        if parcel_width_cm is not None
+        else order_parcel_width_cm
+    )
+    parcel_height_cm = (
+        float(parcel_height_cm)
+        if parcel_height_cm is not None
+        else order_parcel_height_cm
+    )
+    parcel_description = (parcel_description or order_parcel_description).strip()
     
     # Check if required fields are missing
     missing_fields = []
@@ -1402,7 +1451,12 @@ async def fetch_and_create_shipment(
             for field in missing_fields:
                 error_msg += f"  - {field}\n"
 
-        error_msg += "\nPlease provide the missing fields and retry fetch_and_create_shipment."
+        error_msg += (
+            "\nPlease ask the user for these missing values and retry "
+            "fetch_and_create_shipment with direct parameters (for example "
+            "ship_from_*, ship_to_*, parcel_weight_kg, parcel_length_cm, "
+            "parcel_width_cm, parcel_height_cm)."
+        )
         
         return error_msg
     
