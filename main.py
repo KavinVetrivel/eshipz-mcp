@@ -97,204 +97,6 @@ def _get_slug_from_description(description: str) -> str:
     return "auto"  # Fallback if no match is found
 
 
-# CITY_STATE_MAP = {
-#     # Metro cities
-#     "chennai": "tamil nadu", "mumbai": "maharashtra", "bengaluru": "karnataka",
-#     "bangalore": "karnataka", "delhi": "delhi", "new delhi": "delhi",
-#     "kolkata": "west bengal", "hyderabad": "telangana", "pune": "maharashtra",
-#     "ahmedabad": "gujarat", "surat": "gujarat", "jaipur": "rajasthan",
-#     "lucknow": "uttar pradesh", "kanpur": "uttar pradesh", "nagpur": "maharashtra",
-#     "indore": "madhya pradesh", "thane": "maharashra", "bhopal": "madhya pradesh",
-#     "visakhapatnam": "andhra pradesh", "pimpri-chinchwad": "maharashtra",
-#     "patna": "bihar", "vadodara": "gujarat", "ghaziabad": "uttar pradesh",
-#     "ludhiana": "punjab", "agra": "uttar pradesh", "nashik": "maharashtra",
-#     "faridabad": "haryana", "meerut": "uttar pradesh", "rajkot": "gujarat",
-#     "kalyan-dombivali": "maharashtra", "vasai-virar": "maharashtra",
-#     "varanasi": "uttar pradesh", "srinagar": "jammu and kashmir",
-#     "aurangabad": "maharashtra", "dhanbad": "jharkhand", "amritsar": "punjab",
-#     "navi mumbai": "maharashtra", "allahabad": "uttar pradesh",
-#     "prayagraj": "uttar pradesh", "howrah": "west bengal", "ranchi": "jharkhand",
-#     "gwalior": "madhya pradesh", "jabalpur": "madhya pradesh",
-#     "coimbatore": "tamil nadu", "vijayawada": "andhra pradesh", "jodhpur": "rajasthan",
-#     "madurai": "tamil nadu", "raipur": "chhattisgarh", "kota": "rajasthan",
-#     "chandigarh": "chandigarh", "guwahati": "assam", "solapur": "maharashtra",
-#     "hubballi-dharwad": "karnataka", "bareilly": "uttar pradesh", "moradabad": "uttar pradesh",
-#     "mysore": "karnataka", "mysuru": "karnataka", "gurgaon": "haryana",
-#     "gurugram": "haryana", "aligarh": "uttar pradesh", "jalandhar": "punjab",
-#     "tiruchirappalli": "tamil nadu", "bhubaneswar": "odisha", "salem": "tamil nadu",
-#     "warangal": "telangana", "guntur": "andhra pradesh", "bhiwandi": "maharashtra",
-#     "saharanpur": "uttar pradesh", "gorakhpur": "uttar pradesh", "bikaner": "rajasthan",
-#     "amravati": "maharashtra", "noida": "uttar pradesh", "jamshedpur": "jharkhand",
-#     "bhilai": "chhattisgarh", "cuttack": "odisha", "firozabad": "uttar pradesh",
-#     "kochi": "kerala", "cochin": "kerala", "nellore": "andhra pradesh",
-#     "bhavnagar": "gujarat", "dehradun": "uttarakhand", "durgapur": "west bengal",
-#     "asansol": "west bengal", "rourkela": "odisha", "nanded": "maharashtra",
-#     "kolhapur": "maharashtra", "ajmer": "rajasthan", "akola": "maharashtra",
-#     "gulbarga": "karnataka", "jamnagar": "gujarat", "ujjain": "madhya pradesh",
-#     "loni": "uttar pradesh", "siliguri": "west bengal", "jhansi": "uttar pradesh",
-#     "ulhasnagar": "maharashtra", "jammu": "jammu and kashmir", "sangli-miraj": "maharashtra",
-#     "mangalore": "karnataka", "erode": "tamil nadu", "belgaum": "karnataka",
-#     "belagavi": "karnataka", "ambattur": "tamil nadu", "tirunelveli": "tamil nadu",
-#     "malegaon": "maharashtra", "gaya": "bihar", "jalgaon": "maharashtra",
-#     "udaipur": "rajasthan", "maheshtala": "west bengal", "tiruppur": "tamil nadu",
-#     "davanagere": "karnataka", "kozhikode": "kerala", "calicut": "kerala",
-#     "akola": "maharashtra", "kurnool": "andhra pradesh", "rajpur sonarpur": "west bengal",
-#     "rajahmundry": "andhra pradesh", "bokaro": "jharkhand", "south dumdum": "west bengal",
-#     "bellary": "karnataka", "patiala": "punjab", "gopalpur": "west bengal",
-#     "agartala": "tripura", "bhagalpur": "bihar", "muzaffarnagar": "uttar pradesh",
-#     "bhatpara": "west bengal", "panihati": "west bengal", "latur": "maharashtra",
-#     "dhule": "maharashtra", "rohtak": "haryana", "korba": "chhattisgarh",
-#     "bhilwara": "rajasthan", "brahmapur": "odisha", "berhampur": "odisha",
-#     "muzaffarpur": "bihar", "ahmednagar": "maharashtra", "mathura": "uttar pradesh",
-#     "kollam": "kerala", "avadi": "tamil nadu", "kadapa": "andhra pradesh",
-#     "kamarhati": "west bengal", "sambalpur": "odisha", "bilaspur": "chhattisgarh",
-#     "shahjahanpur": "uttar pradesh", "satara": "maharashtra", "bijapur": "karnataka",
-#     "rampur": "uttar pradesh", "shivamogga": "karnataka", "shimoga": "karnataka",
-#     "chandrapur": "maharashtra", "junagadh": "gujarat", "thrissur": "kerala",
-#     "alwar": "rajasthan", "bardhaman": "west bengal", "kulti": "west bengal",
-#     "kakinada": "andhra pradesh", "nizamabad": "telangana", "parbhani": "maharashtra",
-#     "tumkur": "karnataka", "khammam": "telangana", "ozhukarai": "puducherry",
-#     "bihar sharif": "bihar", "panipat": "haryana", "darbhanga": "bihar",
-#     "bally": "west bengal", "aizawl": "mizoram", "dewas": "madhya pradesh",
-#     "ichalkaranji": "maharashtra", "karnal": "haryana", "bathinda": "punjab",
-#     "jalna": "maharashtra", "eluru": "andhra pradesh", "kirari suleman nagar": "delhi",
-#     "barasat": "west bengal", "purnia": "bihar", "satna": "madhya pradesh",
-#     "mira-bhayandar": "maharashtra", "karimnagar": "telangana", "etawah": "uttar pradesh",
-#     "bharatpur": "rajasthan", "begusarai": "bihar", "new delhi": "delhi",
-#     "chhapra": "bihar", "kadapa": "andhra pradesh", "ramagundam": "telangana",
-#     "pali": "rajasthan", "satna": "madhya pradesh", "vizianagaram": "andhra pradesh",
-#     "katihar": "bihar", "hardwar": "uttarakhand", "haridwar": "uttarakhand",
-#     "sonipat": "haryana", "nagercoil": "tamil nadu", "thanjavur": "tamil nadu",
-#     "murwara": "madhya pradesh", "naihati": "west bengal", "sambhal": "uttar pradesh",
-#     "nadiad": "gujarat", "yamunanagar": "haryana", "english bazar": "west bengal",
-#     "unnao": "uttar pradesh", "secunderabad": "telangana", "margao": "goa",
-#     "vasco da gama": "goa", "porbandar": "gujarat", "anand": "gujarat",
-#     "ratlam": "madhya pradesh", "morbi": "gujarat", "pondicherry": "puducherry",
-#     "puducherry": "puducherry", "gandhidham": "gujarat", "veraval": "gujarat",
-#     "madras": "tamil nadu", "bombay": "maharashtra", "calcutta": "west bengal",
-# }
-
-# # City aliases for normalization
-# CITY_ALIASES = {
-#     "bangalore": "bengaluru", "bombay": "mumbai", "calcutta": "kolkata",
-#     "madras": "chennai", "mysore": "mysuru", "cochin": "kochi",
-#     "calicut": "kozhikode", "trivandrum": "thiruvananthapuram",
-#     "poona": "pune", "baroda": "vadodara", "allahabad": "prayagraj",
-# }
-
-# # Parcel validation constants
-# MAX_WEIGHT_KG = 300
-# MAX_DIM_CM = 300
-# VOLUMETRIC_DIVISOR = 5000  # standard for most Indian carriers
-
-# # Address type keywords
-# RESIDENTIAL_KEYWORDS = {"home", "house", "flat", "apartment", "villa", "lane", "society"}
-# BUSINESS_KEYWORDS = {"pvt", "ltd", "llp", "inc", "corp", "technologies", "enterprises"}
-
-# def infer_state_from_city(city: str) -> str | None:
-#     """Try to infer state name from a given city using aliases and CITY_STATE_MAP.
-
-#     Returns normalized state string (as in CITY_STATE_MAP values) or None when
-#     inference is not possible.
-#     """
-#     if not city:
-#         return None
-
-#     # Normalize city name
-#     norm = city.strip().lower()
-#     # remove common punctuation
-#     for ch in [",", "."]:
-#         norm = norm.replace(ch, "")
-#     norm = " ".join(norm.split())
-
-#     # map aliases
-#     if norm in CITY_ALIASES:
-#         norm = CITY_ALIASES[norm]
-
-#     # direct lookup
-#     state = CITY_STATE_MAP.get(norm)
-#     if state:
-#         return state
-
-#     # try simple heuristics: remove spaces/dashes
-#     alt = norm.replace(" ", "-")
-#     state = CITY_STATE_MAP.get(alt)
-#     if state:
-#         return state
-
-#     alt2 = norm.replace("-", " ")
-#     state = CITY_STATE_MAP.get(alt2)
-#     if state:
-#         return state
-
-#     return None
-
-# def normalize_phone(phone: str) -> str | None:
-#     """Normalize Indian phone numbers to 10 digits."""
-#     if not phone:
-#         return None
-#     digits = re.sub(r"\D", "", phone)
-#     if digits.startswith("91") and len(digits) == 12:
-#         digits = digits[2:]
-#     if len(digits) != 10 or not digits[0] in "6789":
-#         return None  # Invalid Indian mobile number
-#     return digits
-
-
-# def validate_pincode(pincode: str) -> bool:
-#     """Validate Indian 6-digit pincode."""
-#     return bool(pincode and re.fullmatch(r"[1-9][0-9]{5}", pincode))
-
-
-# def validate_parcel_dimensions(weight: float, length: float, width: float, height: float) -> str | None:
-    
-#     if weight <= 0:
-#         return "Parcel weight must be greater than 0."
-#     if weight > MAX_WEIGHT_KG:
-#         return f"Parcel weight {weight}kg exceeds max allowed ({MAX_WEIGHT_KG}kg)."
-#     for name, val in [("length", length), ("width", width), ("height", height)]:
-#         if val < 0:
-#             return f"{name.capitalize()} cannot be negative."
-#         if val > MAX_DIM_CM:
-#             return f"{name.capitalize()} {val}cm exceeds max allowed ({MAX_DIM_CM}cm)."
-#     return None
-
-
-# def compute_chargeable_weight(actual_kg: float, l: float, w: float, h: float) -> float:
-#     """Returns the higher of actual vs volumetric weight."""
-#     volumetric_kg = (l * w * h) / VOLUMETRIC_DIVISOR
-#     return round(max(actual_kg, volumetric_kg), 2)
-
-
-# def infer_service_type(weight_kg: float, carrier_slug: str) -> str:
-#     """Rule-based service type selection."""
-#     """ this is experimental and should be verified for other carriers as well or removed"""
-#     if carrier_slug == "delhivery":
-#         return "delhivery-surface" if weight_kg > 10 else "delhivery"
-#     if weight_kg > 30:
-#         return "surface"
-#     return "express"
-
-
-# def infer_address_type(company: str, street: str) -> str:
-#     """Infer address type from company and street info."""
-#     text = (company + " " + street).lower()
-#     if any(k in text for k in BUSINESS_KEYWORDS):
-#         return "business"
-#     if any(k in text for k in RESIDENTIAL_KEYWORDS):
-#         return "residential"
-#     return "business" if company else "residential"
-
-
-# def normalize_date(date_str: str) -> str | None:
-#     """Try to normalize date to YYYY-MM-DD."""
-#     for fmt in ("%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d %b %Y"):
-#         try:
-#             return datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
-#         except ValueError:
-#             continue
-#     return None
-
 async def get_tracking_details(tracking_number: str, api_token: str | None = None) -> dict[str, Any] | None:
     resolved_token = api_token or ESHIPZ_TOKEN
     headers = {
@@ -736,47 +538,7 @@ def _format_docket_allocation_response(data: dict) -> str:
         return summary
     
     return str(data)
-'''
-async def lookup_pincode(pincode: str) -> dict[str, Any] | None:
-    """
-    Look up city, state, district from a 6-digit Indian pincode using India Post API.
-    
-    Returns:
-        {
-            "pincode": "600001",
-            "city": "Chennai",
-            "state": "Tamil Nadu",
-            "district": "Chennai",
-            "country": "IN"
-        }
-        or None if invalid/not found
-    """
-    if not pincode or len(pincode) != 6 or not pincode.isdigit():
-        return None
-    
-    url = f"https://api.postalpincode.in/pincode/{pincode}"
-    
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.get(url, timeout=5.0)
-            data = response.json()
-            
-            if data and len(data) > 0 and data[0].get("Status") == "Success":
-                post_offices = data[0].get("PostOffice", [])
-                if post_offices and len(post_offices) > 0:
-                    office = post_offices[0]
-                    return {
-                        "pincode": pincode,
-                        "city": office.get("District", "").strip(),
-                        "state": office.get("State", "").strip(),
-                        "district": office.get("District", "").strip(),
-                        "country": "IN"
-                    }
-        except Exception as e:
-            print(f"Pincode lookup failed for {pincode}: {str(e)}")
-    
-    return None
-'''
+
 @mcp.tool()
 async def get_tracking(tracking_number: str, ctx: Context) -> str:
     api_token = _resolve_eshipz_token(ctx)
@@ -1679,6 +1441,13 @@ def _calculate_stuck_shipments(
     )
 
 
+def _resolve_days_stuck(days_stuck: int | None) -> int:
+    """Use caller-provided threshold when valid; otherwise fall back to 5 days."""
+    if days_stuck is None or days_stuck < 0:
+        return 5
+    return days_stuck
+
+
 def _bucket_from_days(days_since_update: int | None) -> str:
     if days_since_update is None:
         return "unknown"
@@ -1863,7 +1632,7 @@ async def query_shipments_followup(
     order_id: str = "",
     min_days_without_update: int = -1,
     max_days_without_update: int = -1,
-    days_stuck: int = 5,
+    days_stuck: int | None = None,
     page: int = 1,
     limit: int = 50,
 ) -> str:
@@ -1874,6 +1643,8 @@ async def query_shipments_followup(
     context = _get_query_context(query_id)
     if context is None:
         return "Error: query_id not found or expired. Run query_shipments again to create a fresh query context."
+
+    resolved_days_stuck = _resolve_days_stuck(days_stuck)
 
     base_records = context.get("records", [])
     min_days_value = None if min_days_without_update < 0 else min_days_without_update
@@ -1892,7 +1663,7 @@ async def query_shipments_followup(
 
     normalized_intent = intent.strip().lower()
     if normalized_intent == "stuck":
-        stuck = _calculate_stuck_shipments(filtered, days_stuck, include_delivered=False)
+        stuck = _calculate_stuck_shipments(filtered, resolved_days_stuck, include_delivered=False)
         stuck_sorted = sorted(
             stuck,
             key=lambda record: record.get("days_since_update", -1),
@@ -1902,7 +1673,7 @@ async def query_shipments_followup(
         response = {
             "query_id": query_id,
             "intent": "stuck",
-            "days_stuck": days_stuck,
+            "days_stuck": resolved_days_stuck,
             "total_matches": len(stuck_sorted),
             "page": page,
             "limit": limit,
@@ -1974,7 +1745,7 @@ async def get_shipment_details_from_query(
 
 @mcp.tool()
 async def get_shipments(
-    days_stuck: int = 5, 
+    days_stuck: int | None = None,
     lookback_days: int = 30, 
     page: int = 1,          # Added parameter for Claude
     limit: int = 50,        # Added parameter for Claude
@@ -1990,6 +1761,8 @@ async def get_shipments(
     if not ESHIPZ_API_GET_SHIPMENTS_URL:
         return "Error: ESHIPZ_API_GET_SHIPMENTS_URL is not defined in the environment variables."
 
+    resolved_days_stuck = _resolve_days_stuck(days_stuck)
+
     now_utc = datetime.now(timezone.utc)
     max_date_obj = now_utc
     min_date_obj = now_utc - timedelta(days=lookback_days)
@@ -2004,7 +1777,7 @@ async def get_shipments(
         return f"No shipments found on page {page} between {min_date_str} and {max_date_str}."
 
     normalized = _normalize_shipments(shipments, now_utc)
-    stuck_records = _calculate_stuck_shipments(normalized, days_stuck, include_delivered=False)
+    stuck_records = _calculate_stuck_shipments(normalized, resolved_days_stuck, include_delivered=False)
     stuck_shipments = sorted(
         [
             (record.get("raw", {}), record.get("days_since_update", 0))
@@ -2018,7 +1791,7 @@ async def get_shipments(
         normalized,
         {
             "filters": {
-                "stuck_days": days_stuck,
+                "stuck_days": resolved_days_stuck,
             },
             "lookback_days": lookback_days,
             "min_date": min_date_str,
@@ -2031,7 +1804,7 @@ async def get_shipments(
     )
 
     # Format the header to include page and limit info for Claude
-    summary = f"FOUND {len(stuck_shipments)} STUCK SHIPMENTS (> {days_stuck} days without update)\n"
+    summary = f"FOUND {len(stuck_shipments)} STUCK SHIPMENTS (> {resolved_days_stuck} days without update)\n"
     summary += f"Date Range: {min_date_str} to {max_date_str}\n"
     summary += f"Page: {page} | Limit: {limit} | Fetched: {len(shipments)} items\n"
     summary += f"Query ID: {query_id} (use query_shipments_followup / get_shipment_details_from_query for additional queries)\n"
