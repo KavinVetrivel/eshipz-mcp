@@ -2,6 +2,11 @@
 
 A Model Context Protocol (MCP) server that provides shipment tracking functionality through the eShipz API. This server enables Claude Desktop to track packages across multiple carriers with intelligent, status-aware formatting.
 
+**Architecture**<br>
+![Architecture](img/architecture.png)<br>
+
+
+
 ## Features
 
 - 📦 Track shipments across multiple carriers
